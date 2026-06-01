@@ -1,0 +1,35 @@
+[
+  {
+    "model": "properties.cultura",
+    "pk": 1,
+    "fields": {
+      "nome": "Milho",
+      "temp_min_ideal": 18.0,
+      "temp_max_ideal": 32.0,
+      "chuva_max_diaria": 50.0,
+      "temp_critica_geada": 4.0
+    }
+  },
+  {
+    "model": "properties.cultura",
+    "pk": 2,
+    "fields": {
+      "nome": "Soja",
+      "temp_min_ideal": 20.0,
+      "temp_max_ideal": 30.0,
+      "chuva_max_diaria": 45.0,
+      "temp_critica_geada": 4.0
+    }
+  },
+  {
+    "model": "properties.cultura",
+    "pk": 3,
+    "fields": {
+      "nome": "CafÚ",
+      "temp_min_ideal": 18.0,
+      "temp_max_ideal": 28.0,
+      "chuva_max_diaria": 35.0,
+      "temp_critica_geada": 4.0
+    }
+  }
+]
