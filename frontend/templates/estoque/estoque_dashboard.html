@@ -59,11 +59,22 @@
             <span class="material-symbols-outlined">dashboard</span>
             <span class="font-headline font-bold tracking-tight uppercase text-xs">Dashboard</span>
         </a>
-        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300" href="{% url 'web_properties:list' %}">
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_properties:list' %}">
             <span class="material-symbols-outlined">landscape</span>
             <span class="font-headline font-bold tracking-tight uppercase text-xs">Propriedades</span>
         </a>
-        <!-- Restante do menu... -->
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_planting:simulacao_list' %}">
+            <span class="material-symbols-outlined">model_training</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Simulação</span>
+        </a>
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_weather:dashboard' %}">
+            <span class="material-symbols-outlined">wb_sunny</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Clima</span>
+        </a>
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_operational:select' %}">
+            <span class="material-symbols-outlined">precision_manufacturing</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Operacional</span>
+        </a>
         <a class="flex items-center gap-4 py-3 px-4 text-tertiary border-l-4 border-tertiary-container bg-gradient-to-r from-tertiary-container/10 to-transparent transition-all duration-300 group" href="{% url 'web_estoque:select' %}">
             <span class="material-symbols-outlined">inventory_2</span>
             <span class="font-headline font-bold tracking-tight uppercase text-xs">Estoque</span>

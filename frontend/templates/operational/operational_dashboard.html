@@ -1,0 +1,1579 @@
+{% extends "base.html" %}
+
+{% block title %}Operacional — AgroMind Rural{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Core Layout ────────────────────────────────────── */
+    .glass-modal {
+        background: rgba(18, 18, 18, 0.98);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 40px 80px -12px rgba(0,0,0,0.8);
+    }
+
+    /* ── Custom Inputs ──────────────────────────────────── */
+    .custom-input, .custom-select {
+        background: rgba(255,255,255,0.04) !important;
+        border: none !important;
+        border-bottom: 1px solid #3d4a3e !important;
+        border-radius: 0 !important;
+        padding: 0.7rem 0 !important;
+        color: white !important;
+        font-family: 'Inter', sans-serif;
+        transition: border-color 0.3s ease !important;
+        width: 100%;
+    }
+    .custom-input:focus, .custom-select:focus {
+        border-color: #54e98a !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    .custom-input::placeholder { color: #4f4f4f !important; }
+    .custom-select option { background: #1c1b1b; color: white; }
+
+    /* ── Table ──────────────────────────────────────────── */
+    .table-container { background: #191919; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; }
+    th { font-family: "Space Grotesk", sans-serif; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; color: #8c8c8c; padding: 14px 20px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    td { padding: 16px 20px; font-size: 13px; color: white; font-weight: 500; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(84,233,138,0.02); }
+    .action-btn { cursor:pointer; padding:4px; border-radius:6px; transition: all 0.2s; }
+    .action-btn:hover { background: rgba(255,255,255,0.08); }
+
+    /* ── Tabs ────────────────────────────────────────────── */
+    .tab-btn {
+        font-family: 'Space Grotesk', sans-serif; font-size: 0.6rem; font-weight: 900; letter-spacing: 0.12em;
+        text-transform: uppercase; padding: 10px 18px; color: #555; border-bottom: 2px solid transparent;
+        cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .tab-btn.active { color: #54e98a; border-color: #54e98a; }
+    .tab-btn:hover:not(.active) { color: #888; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Modal Tabs ─────────────────────────────────────── */
+    .modal-tab {
+        font-family: 'Space Grotesk', sans-serif; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.12em;
+        text-transform: uppercase; padding: 8px 14px; color: #555; border-bottom: 2px solid transparent;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .modal-tab.active { color: #54e98a; border-color: #54e98a; }
+    .modal-tab-panel { display: none; }
+    .modal-tab-panel.active { display: block; }
+
+    /* ── Field Labels ────────────────────────────────────── */
+    .field-label { display: block; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: #869486; margin-bottom: 6px; }
+    .field-label .req { color: #54e98a; }
+
+    /* ── KPI Cards ──────────────────────────────────────── */
+    .kpi-card { background: #191919; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.25rem 1.5rem; }
+    .kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 1.75rem; font-weight: 900; color: white; }
+    .kpi-label { font-family: 'Space Grotesk', sans-serif; font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #869486; margin-top: 4px; }
+
+    /* ── Status Badges ──────────────────────────────────── */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif; text-transform: uppercase; letter-spacing: 0.08em; }
+    .badge-ok { background: rgba(84,233,138,0.12); color: #54e98a; border: 1px solid rgba(84,233,138,0.2); }
+    .badge-warn { background: rgba(242,202,80,0.12); color: #f2ca50; border: 1px solid rgba(242,202,80,0.2); }
+    .badge-danger { background: rgba(255,180,171,0.12); color: #ffb4ab; border: 1px solid rgba(255,180,171,0.2); }
+    .badge-info { background: rgba(146,204,255,0.12); color: #92ccff; border: 1px solid rgba(146,204,255,0.2); }
+
+    /* ── Alert Items ─────────────────────────────────────── */
+    .alert-item { background: rgba(242,202,80,0.07); border: 1px solid rgba(242,202,80,0.18); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+    .alert-item.critical { background: rgba(255,180,171,0.07); border-color: rgba(255,180,171,0.18); }
+
+    /* ── Animate ──────────────────────────────────────────── */
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease both; }
+
+    /* ── Modal overlay ──────────────────────────────────── */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .modal-box { width: 100%; max-width: 580px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
+    .modal-box::-webkit-scrollbar { width: 4px; }
+    .modal-box::-webkit-scrollbar-track { background: transparent; }
+    .modal-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* ── Primary button ─────────────────────────────────── */
+    .btn-primary { background: linear-gradient(135deg, #54e98a, #3db86e); color: #003919; font-family: 'Space Grotesk', sans-serif; font-weight: 900; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 24px; border-radius: 8px; transition: all 0.2s; border: none; cursor: pointer; }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: #555; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s; }
+    .btn-ghost:hover { color: white; border-color: rgba(255,255,255,0.15); }
+    .btn-danger { background: rgba(255,180,171,0.1); color: #ffb4ab; border: 1px solid rgba(255,180,171,0.2); padding: 10px 18px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: rgba(255,180,171,0.18); }
+
+    /* ── Scrollbar ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- ═══════════════════════════════════════════ SIDEBAR ══ -->
+<aside class="h-screen w-72 fixed left-0 top-0 z-50 bg-[#131313] shadow-[0_24px_48px_rgba(0,0,0,0.4)] flex flex-col py-8 px-6">
+    <div class="mb-12">
+        <h1 class="text-2xl font-black tracking-tighter text-primary font-headline">AgroMind</h1>
+        <p class="font-headline font-bold tracking-tight uppercase text-xs text-gray-500">Rural Intelligence</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300" href="{% url 'users:dashboard' %}">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Dashboard</span>
+        </a>
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300" href="{% url 'web_properties:list' %}">
+            <span class="material-symbols-outlined">landscape</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Propriedades</span>
+        </a>
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300" href="{% url 'web_estoque:select' %}">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Estoque</span>
+        </a>
+        <a class="flex items-center gap-4 py-3 px-4 text-primary border-l-4 border-primary-container bg-gradient-to-r from-primary-container/10 to-transparent transition-all duration-300" href="{% url 'web_operational:select' %}">
+            <span class="material-symbols-outlined">precision_manufacturing</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Operacional</span>
+        </a>
+    </nav>
+    <div class="mt-auto pt-8 border-t border-white/5">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-primary-container flex justify-center items-center">
+                <span class="material-symbols-outlined text-on-primary-container text-xl">person</span>
+            </div>
+            <div class="flex-grow">
+                <p class="text-xs font-bold text-white uppercase tracking-wider truncate">{{ user.name }}</p>
+                <p class="text-[10px] text-primary uppercase tracking-widest font-bold">{{ user.get_role_display }}</p>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════ TOP NAV ══ -->
+<header class="fixed top-0 right-0 w-[calc(100%-18rem)] z-40 bg-[#131313]/80 backdrop-blur-xl flex justify-between items-center px-10 h-20 border-b border-white/5">
+    <div class="flex items-center gap-4">
+        <a href="{% url 'web_operational:select' %}" class="text-gray-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+        </a>
+        <div class="h-4 w-px bg-white/10"></div>
+        <nav class="flex items-center gap-2 text-[10px] font-headline font-bold uppercase tracking-widest">
+            <a href="{% url 'users:dashboard' %}" class="text-gray-600 hover:text-gray-400">Dashboard</a>
+            <span class="text-gray-700">/</span>
+            <a href="{% url 'web_operational:select' %}" class="text-gray-600 hover:text-gray-400">Operacional</a>
+            <span class="text-gray-700">/</span>
+            <span class="text-primary" id="breadcrumbFarm">Carregando...</span>
+        </nav>
+    </div>
+    <div class="flex items-center gap-6">
+        <div id="alertBadge" class="hidden items-center gap-2 bg-tertiary/10 text-tertiary border border-tertiary/20 px-3 py-1 rounded-full">
+            <span class="material-symbols-outlined text-sm">warning</span>
+            <span class="text-[10px] font-headline font-black uppercase tracking-wider" id="alertBadgeText">0 alertas</span>
+        </div>
+        <form method="post" action="{% url 'users:logout' %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="flex items-center gap-2 text-gray-400 hover:text-error transition-colors duration-200">
+                <span class="material-symbols-outlined text-lg">logout</span>
+                <span class="uppercase tracking-wider text-[10px] font-bold font-headline">Sair</span>
+            </button>
+        </form>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════ MAIN ══════ -->
+<main class="ml-72 min-h-screen pt-28 px-10 pb-20 max-w-[1600px] relative">
+
+    <!-- Page Header -->
+    <div class="flex justify-between items-start mb-8 animate-fade-in-up">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <span class="material-symbols-outlined text-primary text-3xl">precision_manufacturing</span>
+                <h2 class="font-headline font-bold text-3xl text-white" id="pageTitle">Controle Operacional</h2>
+            </div>
+            <p class="text-gray-500 text-xs font-body mt-1">Máquinas, abastecimentos, uso e manutenções da fazenda</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="kpiGrid">
+        <div class="kpi-card animate-fade-in-up" style="animation-delay:.05s">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-primary text-lg">agriculture</span>
+                <span class="kpi-label">Máquinas Ativas</span>
+            </div>
+            <div class="kpi-value" id="kpiMaquinas">—</div>
+        </div>
+        <div class="kpi-card animate-fade-in-up" style="animation-delay:.1s">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-secondary text-lg">local_gas_station</span>
+                <span class="kpi-label">Custo Combustível</span>
+            </div>
+            <div class="kpi-value text-secondary" id="kpiCombustivel">—</div>
+        </div>
+        <div class="kpi-card animate-fade-in-up" style="animation-delay:.15s">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-tertiary text-lg">build</span>
+                <span class="kpi-label">Custo Manutenção</span>
+            </div>
+            <div class="kpi-value text-tertiary" id="kpiManutencao">—</div>
+        </div>
+        <div class="kpi-card animate-fade-in-up" style="animation-delay:.2s">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-error text-lg">notifications_active</span>
+                <span class="kpi-label">Alertas Pendentes</span>
+            </div>
+            <div class="kpi-value text-error" id="kpiAlertas">—</div>
+        </div>
+    </div>
+
+    <!-- ── Tabs ─────────────────────────────────────────── -->
+    <div class="border-b border-white/5 mb-6 flex gap-0 overflow-x-auto" style="scrollbar-width:none">
+        <button class="tab-btn active" data-tab="visao-geral" onclick="switchTab('visao-geral')">Visão Geral</button>
+        <button class="tab-btn" data-tab="maquinas" onclick="switchTab('maquinas')">Máquinas</button>
+        <button class="tab-btn" data-tab="abastecimentos" onclick="switchTab('abastecimentos')">Abastecimentos</button>
+        <button class="tab-btn" data-tab="usos" onclick="switchTab('usos')">Uso de Máquinas</button>
+        <button class="tab-btn" data-tab="manutencoes" onclick="switchTab('manutencoes')">Manutenções</button>
+        <button class="tab-btn" data-tab="programacoes" onclick="switchTab('programacoes')">Programações</button>
+    </div>
+
+    <!-- ═══════════════════ TAB: VISÃO GERAL ════════════ -->
+    <div id="tab-visao-geral" class="tab-panel active">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Alertas -->
+            <div>
+                <h3 class="font-headline font-bold text-sm uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-tertiary text-lg">warning</span> Alertas de Manutenção
+                </h3>
+                <div id="alertasList" class="space-y-3">
+                    <div class="kpi-card animate-pulse h-16"></div>
+                </div>
+            </div>
+            <!-- Consolidado de Custos -->
+            <div>
+                <h3 class="font-headline font-bold text-sm uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-lg">bar_chart</span> Consolidado de Custos
+                </h3>
+                <!-- Filtros Consolidado -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div>
+                        <label class="field-label" style="font-size:0.5rem">Safra</label>
+                        <select id="filtroConsSafra" class="custom-select text-xs !px-3 !py-2 rounded-md" onchange="carregarConsolidado()">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label" style="font-size:0.5rem">Talhão</label>
+                        <select id="filtroConsTalhao" class="custom-select text-xs !px-3 !py-2 rounded-md" onchange="carregarConsolidado()">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label" style="font-size:0.5rem">Início</label>
+                        <input type="date" id="filtroConsInicio" class="custom-input text-xs !px-3 !py-2 rounded-md" onchange="carregarConsolidado()">
+                    </div>
+                    <div>
+                        <label class="field-label" style="font-size:0.5rem">Fim</label>
+                        <input type="date" id="filtroConsFim" class="custom-input text-xs !px-3 !py-2 rounded-md" onchange="carregarConsolidado()">
+                    </div>
+                </div>
+                <div id="consolidadoList" class="space-y-2">
+                    <div class="kpi-card animate-pulse h-16"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ TAB: MÁQUINAS ═══════════════ -->
+    <div id="tab-maquinas" class="tab-panel">
+        <div class="flex justify-between items-center mb-5">
+            <span class="text-gray-400 text-xs font-body">Equipamentos cadastrados nesta propriedade</span>
+            <button class="btn-primary flex items-center gap-2" id="btnNovaMaquina" onclick="openModal('maquina')">
+                <span class="material-symbols-outlined text-sm">add</span> Nova Máquina
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="w-full" id="tabelaMaquinas">
+                <thead>
+                    <tr>
+                        <th>Nome / Modelo</th>
+                        <th>Categoria</th>
+                        <th>Horímetro</th>
+                        <th>Custo/h</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyMaquinas">
+                    <tr><td colspan="6" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══════════════════ TAB: ABASTECIMENTOS ══════════ -->
+    <div id="tab-abastecimentos" class="tab-panel">
+        <div class="flex justify-between items-center mb-5">
+            <span class="text-gray-400 text-xs font-body">Registro de abastecimentos de combustível</span>
+            <button class="btn-primary flex items-center gap-2" onclick="openModal('abastecimento')">
+                <span class="material-symbols-outlined text-sm">add</span> Novo Abastecimento
+            </button>
+        </div>
+        <!-- Filtros -->
+        <div class="flex flex-wrap gap-3 mb-5">
+            <select id="filtroAbastMaquina" class="custom-select text-xs !px-3 !py-2 rounded-md" style="max-width:200px" onchange="carregarAbastecimentos()">
+                <option value="">Todas as máquinas</option>
+            </select>
+            <input type="date" id="filtroAbastInicio" class="custom-input text-xs !px-3 !py-2 rounded-md" style="max-width:150px" onchange="carregarAbastecimentos()">
+            <input type="date" id="filtroAbastFim" class="custom-input text-xs !px-3 !py-2 rounded-md" style="max-width:150px" onchange="carregarAbastecimentos()">
+        </div>
+        <div class="table-container">
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Máquina</th>
+                        <th>Combustível</th>
+                        <th>Qtd (L)</th>
+                        <th>Valor Total</th>
+                        <th>Horímetro</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyAbastecimentos">
+                    <tr><td colspan="7" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ════════════════════ TAB: USO ═══════════════════ -->
+    <div id="tab-usos" class="tab-panel">
+        <div class="flex justify-between items-center mb-5">
+            <span class="text-gray-400 text-xs font-body">Registro de horas de uso por talhão</span>
+            <button class="btn-primary flex items-center gap-2" onclick="openModal('uso')">
+                <span class="material-symbols-outlined text-sm">add</span> Registrar Uso
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Máquina</th>
+                        <th>Talhão</th>
+                        <th>Atividade</th>
+                        <th>Horas</th>
+                        <th>Operador</th>
+                        <th>Custo</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyUsos">
+                    <tr><td colspan="8" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══════════════════ TAB: MANUTENÇÕES ════════════ -->
+    <div id="tab-manutencoes" class="tab-panel">
+        <div class="flex justify-between items-center mb-5">
+            <span class="text-gray-400 text-xs font-body">Histórico de manutenções realizadas</span>
+            <button class="btn-primary flex items-center gap-2" onclick="openModal('manutencao')">
+                <span class="material-symbols-outlined text-sm">add</span> Nova Manutenção
+            </button>
+        </div>
+        <!-- Filtros -->
+        <div class="flex flex-wrap gap-3 mb-5">
+            <select id="filtroManutTipo" class="custom-select text-xs !px-3 !py-2 rounded-md" style="max-width:200px" onchange="carregarManutencoes()">
+                <option value="">Todos os tipos</option>
+                <option value="preventiva">Preventiva</option>
+                <option value="corretiva">Corretiva</option>
+            </select>
+        </div>
+        <div class="table-container">
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Máquina</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Custo</th>
+                        <th>Fornecedor</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyManutencoes">
+                    <tr><td colspan="7" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ══════════════════ TAB: PROGRAMAÇÕES ══════════ -->
+    <div id="tab-programacoes" class="tab-panel">
+        <div class="flex justify-between items-center mb-5">
+            <span class="text-gray-400 text-xs font-body">Agenda preventiva de manutenções futuras</span>
+            <button class="btn-primary flex items-center gap-2" onclick="openModal('programacao')">
+                <span class="material-symbols-outlined text-sm">add</span> Agendar Manutenção
+            </button>
+        </div>
+        <div id="programacoesList" class="space-y-3">
+            <div class="kpi-card animate-pulse h-20"></div>
+        </div>
+    </div>
+</main>
+
+<!-- ═══════════════════════════ MODAL MAQUINA ════════════════════════════════ -->
+<div id="modalMaquina" class="modal-overlay hidden">
+    <div class="modal-box glass-modal">
+        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+            <div>
+                <h3 class="font-headline font-bold text-xl text-white" id="modalMaquinaTitle">Nova Máquina</h3>
+                <p class="text-gray-500 text-xs mt-1">Cadastre um novo equipamento na frota</p>
+            </div>
+            <button onclick="closeModal('maquina')" class="text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="formMaquina" class="p-6 space-y-5" onsubmit="submitMaquina(event)">
+            <input type="hidden" id="maquinaEditId">
+            <div class="grid grid-cols-2 gap-5">
+                <div class="col-span-2">
+                    <label class="field-label">Nome <span class="req">*</span></label>
+                    <input type="text" id="maquinaNome" class="custom-input" placeholder="Ex: Trator John Deere 5090E" required>
+                </div>
+                <div>
+                    <label class="field-label">Modelo</label>
+                    <input type="text" id="maquinaModelo" class="custom-input" placeholder="Ex: 5090E">
+                </div>
+                <div>
+                    <label class="field-label">Categoria <span class="req">*</span></label>
+                    <select id="maquinaCategoria" class="custom-select" required>
+                        <option value="trator">Trator</option>
+                        <option value="colheitadeira">Colheitadeira</option>
+                        <option value="pulverizador">Pulverizador</option>
+                        <option value="plantadeira">Plantadeira</option>
+                        <option value="caminhao">Caminhão</option>
+                        <option value="implemento">Implemento</option>
+                        <option value="outro">Outro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Horímetro Atual (h)</label>
+                    <input type="number" id="maquinaHorimetro" class="custom-input" placeholder="0" min="0" step="0.1" value="0">
+                </div>
+                <div>
+                    <label class="field-label">Custo por Hora (R$)</label>
+                    <input type="number" id="maquinaCustoHora" class="custom-input" placeholder="0.00" min="0" step="0.01" value="0">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="btn-ghost" onclick="closeModal('maquina')">Cancelar</button>
+                <button type="submit" class="btn-primary" id="btnSubmitMaquina">Cadastrar Máquina</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ══════════════════════ MODAL ABASTECIMENTO ══════════════════════════════ -->
+<div id="modalAbastecimento" class="modal-overlay hidden">
+    <div class="modal-box glass-modal">
+        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+            <div>
+                <h3 class="font-headline font-bold text-xl text-white" id="modalAbastTitle">Novo Abastecimento</h3>
+                <p class="text-gray-500 text-xs mt-1">Registre o consumo de combustível</p>
+            </div>
+            <button onclick="closeModal('abastecimento')" class="text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="formAbastecimento" class="p-6 space-y-5" onsubmit="submitAbastecimento(event)">
+            <input type="hidden" id="abastEditId">
+            <div class="grid grid-cols-2 gap-5">
+                <div>
+                    <label class="field-label">Máquina <span class="req">*</span></label>
+                    <select id="abastMaquina" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Safra <span class="req">*</span></label>
+                    <select id="abastSafra" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Data <span class="req">*</span></label>
+                    <input type="date" id="abastData" class="custom-input" required>
+                </div>
+                <div>
+                    <label class="field-label">Combustível <span class="req">*</span></label>
+                    <select id="abastTipo" class="custom-select" required>
+                        <option value="diesel">Diesel</option>
+                        <option value="gasolina">Gasolina</option>
+                        <option value="etanol">Etanol</option>
+                        <option value="arla">Arla 32</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Quantidade (L) <span class="req">*</span></label>
+                    <input type="number" id="abastQtd" class="custom-input" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label class="field-label">Valor Total (R$) <span class="req">*</span></label>
+                    <input type="number" id="abastValor" class="custom-input" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label class="field-label">Horímetro (h)</label>
+                    <input type="number" id="abastHorimetro" class="custom-input" placeholder="Opcional" min="0" step="0.1">
+                </div>
+                <div>
+                    <label class="field-label">Observação</label>
+                    <input type="text" id="abastObs" class="custom-input" placeholder="Opcional">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="btn-ghost" onclick="closeModal('abastecimento')">Cancelar</button>
+                <button type="submit" class="btn-primary">Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════════ MODAL USO ══════════════════════════════════════ -->
+<div id="modalUso" class="modal-overlay hidden">
+    <div class="modal-box glass-modal">
+        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+            <div>
+                <h3 class="font-headline font-bold text-xl text-white">Registrar Uso de Máquina</h3>
+                <p class="text-gray-500 text-xs mt-1">Informe as horas trabalhadas por talhão</p>
+            </div>
+            <button onclick="closeModal('uso')" class="text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="formUso" class="p-6 space-y-5" onsubmit="submitUso(event)">
+            <input type="hidden" id="usoEditId">
+            <div class="grid grid-cols-2 gap-5">
+                <div>
+                    <label class="field-label">Máquina <span class="req">*</span></label>
+                    <select id="usoMaquina" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Talhão <span class="req">*</span></label>
+                    <select id="usoTalhao" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Safra <span class="req">*</span></label>
+                    <select id="usoSafra" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Data <span class="req">*</span></label>
+                    <input type="date" id="usoData" class="custom-input" required>
+                </div>
+                <div>
+                    <label class="field-label">Hora Início</label>
+                    <input type="time" id="usoInicio" class="custom-input" onchange="calcularHorasTrabalhadas()">
+                </div>
+                <div>
+                    <label class="field-label">Hora Fim</label>
+                    <input type="time" id="usoFim" class="custom-input" onchange="calcularHorasTrabalhadas()">
+                </div>
+                <div>
+                    <label class="field-label">Horas Trabalhadas <span class="req">*</span></label>
+                    <input type="number" id="usoHoras" class="custom-input" placeholder="Ex: 4.5" min="0" step="0.1" required>
+                </div>
+                <div>
+                    <label class="field-label">Atividade</label>
+                    <select id="usoAtividade" class="custom-select">
+                        <option value="plantio">Plantio</option>
+                        <option value="pulverizacao">Pulverização</option>
+                        <option value="colheita">Colheita</option>
+                        <option value="preparo_solo">Preparo do Solo</option>
+                        <option value="adubacao">Adubação</option>
+                        <option value="transporte">Transporte</option>
+                        <option value="outro">Outro</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="field-label">Operador</label>
+                    <input type="text" id="usoOperador" class="custom-input" placeholder="Nome do operador (opcional)">
+                </div>
+                <div class="col-span-2">
+                    <label class="field-label">Observação</label>
+                    <input type="text" id="usoObs" class="custom-input" placeholder="Observação (opcional)">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="btn-ghost" onclick="closeModal('uso')">Cancelar</button>
+                <button type="submit" class="btn-primary">Registrar Uso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════ MODAL MANUTENÇÃO ═══════════════════════════════════ -->
+<div id="modalManutencao" class="modal-overlay hidden">
+    <div class="modal-box glass-modal">
+        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+            <div>
+                <h3 class="font-headline font-bold text-xl text-white" id="modalManutTitle">Nova Manutenção</h3>
+                <p class="text-gray-500 text-xs mt-1">Registre a manutenção realizada no equipamento</p>
+            </div>
+            <button onclick="closeModal('manutencao')" class="text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="formManutencao" class="p-6 space-y-5" onsubmit="submitManutencao(event)">
+            <input type="hidden" id="manutEditId">
+            <div class="grid grid-cols-2 gap-5">
+                <div>
+                    <label class="field-label">Máquina <span class="req">*</span></label>
+                    <select id="manutMaquina" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Safra <span class="req">*</span></label>
+                    <select id="manutSafra" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Tipo <span class="req">*</span></label>
+                    <select id="manutTipo" class="custom-select" required>
+                        <option value="preventiva">Preventiva</option>
+                        <option value="corretiva">Corretiva</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Data <span class="req">*</span></label>
+                    <input type="date" id="manutData" class="custom-input" required>
+                </div>
+                <div class="col-span-2">
+                    <label class="field-label">Descrição <span class="req">*</span></label>
+                    <input type="text" id="manutDescricao" class="custom-input" placeholder="Ex: Troca de óleo e filtros" required>
+                </div>
+                <div>
+                    <label class="field-label">Custo (R$) <span class="req">*</span></label>
+                    <input type="number" id="manutCusto" class="custom-input" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label class="field-label">Fornecedor</label>
+                    <input type="text" id="manutFornecedor" class="custom-input" placeholder="Opcional">
+                </div>
+                <div class="col-span-2">
+                    <label class="field-label">Observação</label>
+                    <input type="text" id="manutObs" class="custom-input" placeholder="Observação (opcional)">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="btn-ghost" onclick="closeModal('manutencao')">Cancelar</button>
+                <button type="submit" class="btn-primary">Salvar Manutenção</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════ MODAL PROGRAMAÇÃO ══════════════════════════════════ -->
+<div id="modalProgramacao" class="modal-overlay hidden">
+    <div class="modal-box glass-modal">
+        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+            <div>
+                <h3 class="font-headline font-bold text-xl text-white">Agendar Manutenção</h3>
+                <p class="text-gray-500 text-xs mt-1">Crie um alerta preventivo de manutenção</p>
+            </div>
+            <button onclick="closeModal('programacao')" class="text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form id="formProgramacao" class="p-6 space-y-5" onsubmit="submitProgramacao(event)">
+            <input type="hidden" id="progEditId">
+            <div class="grid grid-cols-2 gap-5">
+                <div>
+                    <label class="field-label">Máquina <span class="req">*</span></label>
+                    <select id="progMaquina" class="custom-select" required></select>
+                </div>
+                <div>
+                    <label class="field-label">Critério <span class="req">*</span></label>
+                    <select id="progCriterio" class="custom-select" required onchange="toggleCriterio()">
+                        <option value="data">Por Data</option>
+                        <option value="horimetro">Por Horímetro</option>
+                        <option value="ambos">Ambos</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="field-label">Descrição <span class="req">*</span></label>
+                    <input type="text" id="progDescricao" class="custom-input" placeholder="Ex: Troca de óleo — a cada 250h" required>
+                </div>
+                <div id="fieldDataLimite">
+                    <label class="field-label">Data Limite</label>
+                    <input type="date" id="progDataLimite" class="custom-input">
+                </div>
+                <div id="fieldHorimetroLimite">
+                    <label class="field-label">Horímetro Limite (h)</label>
+                    <input type="number" id="progHorimetroLimite" class="custom-input" placeholder="Ex: 250" min="0" step="0.1">
+                </div>
+                <div>
+                    <label class="field-label">Antecedência Alerta (dias)</label>
+                    <input type="number" id="progDiasAlerta" class="custom-input" placeholder="15" value="15" min="1">
+                </div>
+                <div>
+                    <label class="field-label">Antecedência Alerta (horas)</label>
+                    <input type="number" id="progHorasAlerta" class="custom-input" placeholder="20" value="20" min="0" step="0.1">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="btn-ghost" onclick="closeModal('programacao')">Cancelar</button>
+                <button type="submit" class="btn-primary">Agendar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════ MODAL HISTORICO ════════════════════════════════════ -->
+<div id="modalHistorico" class="modal-overlay hidden">
+    <div class="modal-box glass-modal" style="max-width:760px">
+        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+            <div>
+                <h3 class="font-headline font-bold text-xl text-white" id="historicoTitle">Histórico do Equipamento</h3>
+                <p class="text-gray-500 text-xs mt-1" id="historicoSubtitle">Ciclo de vida completo</p>
+            </div>
+            <button onclick="closeModal('historico')" class="text-gray-500 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-6" id="historicoContent">
+            <div class="animate-pulse space-y-3">
+                <div class="h-12 bg-surface-container-low rounded-lg"></div>
+                <div class="h-12 bg-surface-container-low rounded-lg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const PROP_ID = {{ propriedade_id }};
+const API = `/api/v1/propriedades/${PROP_ID}/operacional`;
+let safras = [];
+let maquinas = [];
+let talhoes = [];
+let abastecimentos = [];
+let usos = [];
+let manutencoes = [];
+let programacoes = [];
+
+function csrfToken() {
+    const m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+}
+
+async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API}${path}`, {
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken(), ...options.headers },
+        ...options,
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || JSON.stringify(err) || `HTTP ${res.status}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
+const fmt = v => parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtBRL = v => 'R$ ' + fmt(v);
+const fmtDate = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+    if (tab === 'maquinas') carregarMaquinas();
+    else if (tab === 'abastecimentos') carregarAbastecimentos();
+    else if (tab === 'usos') carregarUsos();
+    else if (tab === 'manutencoes') carregarManutencoes();
+    else if (tab === 'programacoes') carregarProgramacoes();
+    else if (tab === 'visao-geral') { carregarAlertas(); carregarConsolidado(); }
+}
+
+// ─── Modals ───────────────────────────────────────────────────────────────────
+function openModal(type) {
+    document.getElementById(`modal${capitalize(type)}`).classList.remove('hidden');
+    if (type === 'abastecimento') { populateMaquinaSelect('abastMaquina'); populateSafraSelect('abastSafra'); }
+    if (type === 'uso') { populateMaquinaSelect('usoMaquina'); populateTalhaoSelect('usoTalhao'); populateSafraSelect('usoSafra'); }
+    if (type === 'manutencao') { populateMaquinaSelect('manutMaquina'); populateSafraSelect('manutSafra'); }
+    if (type === 'programacao') { populateMaquinaSelect('progMaquina'); toggleCriterio(); }
+}
+function closeModal(type) {
+    const el = document.getElementById(`modal${capitalize(type)}`);
+    if (el) { el.classList.add('hidden'); }
+    // reset form
+    const form = document.getElementById(`form${capitalize(type)}`);
+    if (form) form.reset();
+    const hiddenId = document.getElementById(`${type}EditId`);
+    if (hiddenId) hiddenId.value = '';
+
+    // restore titles
+    if (type === 'abastecimento') document.getElementById('modalAbastTitle').textContent = 'Novo Abastecimento';
+    if (type === 'uso') document.getElementById('modalUso').querySelector('h3').textContent = 'Registrar Uso de Máquina';
+    if (type === 'manutencao') document.getElementById('modalManutTitle').textContent = 'Nova Manutenção';
+    if (type === 'programacao') document.getElementById('modalProgramacao').querySelector('h3').textContent = 'Agendar Manutenção';
+}
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function toggleCriterio() {
+    const val = document.getElementById('progCriterio').value;
+    document.getElementById('fieldDataLimite').style.display = (val === 'horimetro') ? 'none' : 'block';
+    document.getElementById('fieldHorimetroLimite').style.display = (val === 'data') ? 'none' : 'block';
+}
+
+// ─── Calculations ─────────────────────────────────────────────────────────────
+function calcularHorasTrabalhadas() {
+    const inicio = document.getElementById('usoInicio').value;
+    const fim = document.getElementById('usoFim').value;
+    if (inicio && fim) {
+        const [h1, m1] = inicio.split(':').map(Number);
+        const [h2, m2] = fim.split(':').map(Number);
+        let diffMs = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (diffMs < 0) {
+            diffMs += 24 * 60; // rollover
+        }
+        const horas = diffMs / 60;
+        document.getElementById('usoHoras').value = horas.toFixed(1);
+    }
+}
+
+// ─── Populate Selects ─────────────────────────────────────────────────────────
+function populateMaquinaSelect(id) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = maquinas.filter(m => m.is_active).map(m =>
+        `<option value="${m.id}">${m.nome}</option>`).join('') || '<option value="">Nenhuma máquina</option>';
+}
+function populateSafraSelect(id) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = safras.map(s => `<option value="${s.id}">${s.nome}</option>`).join('') || '<option value="">Nenhuma safra</option>';
+}
+function populateTalhaoSelect(id) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = talhoes.map(t => `<option value="${t.id}">${t.nome}</option>`).join('') || '<option value="">Nenhum talhão</option>';
+}
+function populateSafraFilters() {
+    const sel = document.getElementById('filtroConsSafra');
+    if (sel) {
+        sel.innerHTML = '<option value="">Todas</option>' + safras.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+    }
+}
+function populateTalhaoFilters() {
+    const sel = document.getElementById('filtroConsTalhao');
+    if (sel) {
+        sel.innerHTML = '<option value="">Todos</option>' + talhoes.map(t => `<option value="${t.id}">${t.nome}</option>`).join('');
+    }
+}
+
+// ─── Load: Máquinas ───────────────────────────────────────────────────────────
+async function carregarMaquinas() {
+    const tbody = document.getElementById('tbodyMaquinas');
+    try {
+        maquinas = await apiFetch('/maquinas/');
+        document.getElementById('kpiMaquinas').textContent = maquinas.filter(m => m.is_active).length;
+        tbody.innerHTML = maquinas.length === 0 ?
+            `<tr><td colspan="6" class="text-center text-gray-600 py-10">Nenhuma máquina cadastrada.</td></tr>` :
+            maquinas.map(m => `
+            <tr>
+                <td><p class="font-bold text-white">${m.nome}</p><p class="text-xs text-gray-500">${m.modelo || '—'}</p></td>
+                <td><span class="badge badge-info">${m.categoria_display}</span></td>
+                <td class="font-mono text-primary">${fmt(m.horimetro_atual)} h</td>
+                <td class="font-mono">${fmtBRL(m.custo_hora)}/h</td>
+                <td><span class="badge ${m.is_active ? 'badge-ok' : 'badge-danger'}">${m.is_active ? 'Ativa' : 'Inativa'}</span></td>
+                <td class="flex items-center gap-1">
+                    <button class="action-btn text-gray-500 hover:text-primary" title="Histórico" onclick="verHistorico(${m.id},'${m.nome}')">
+                        <span class="material-symbols-outlined text-base">history</span>
+                    </button>
+                    <button class="action-btn text-gray-500 hover:text-secondary" title="Editar" onclick="editarMaquina(${m.id})">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button class="action-btn text-gray-500 hover:text-error" title="Desativar" onclick="desativarMaquina(${m.id})">
+                        <span class="material-symbols-outlined text-base">power_settings_new</span>
+                    </button>
+                </td>
+            </tr>`).join('');
+
+        // populate filter selects
+        const filtroAbast = document.getElementById('filtroAbastMaquina');
+        if (filtroAbast) {
+            const cur = filtroAbast.value;
+            filtroAbast.innerHTML = '<option value="">Todas as máquinas</option>' +
+                maquinas.map(m => `<option value="${m.id}">${m.nome}</option>`).join('');
+            if (cur) filtroAbast.value = cur;
+        }
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error py-6">${e.message}</td></tr>`;
+    }
+}
+
+// ─── Load: Abastecimentos ─────────────────────────────────────────────────────
+async function carregarAbastecimentos() {
+    const tbody = document.getElementById('tbodyAbastecimentos');
+    try {
+        let url = '/abastecimentos/?';
+        const m = document.getElementById('filtroAbastMaquina')?.value;
+        const di = document.getElementById('filtroAbastInicio')?.value;
+        const df = document.getElementById('filtroAbastFim')?.value;
+        if (m) url += `maquina_id=${m}&`;
+        if (di) url += `data_inicio=${di}&`;
+        if (df) url += `data_fim=${df}&`;
+        const data = await apiFetch(url);
+        abastecimentos = data;
+        tbody.innerHTML = data.length === 0 ?
+            `<tr><td colspan="7" class="text-center text-gray-600 py-10">Nenhum abastecimento encontrado.</td></tr>` :
+            data.map(a => `
+            <tr>
+                <td>${fmtDate(a.data)}</td>
+                <td>${a.maquina_nome}</td>
+                <td><span class="badge badge-info">${a.tipo_combustivel}</span></td>
+                <td class="font-mono">${fmt(a.quantidade)} L</td>
+                <td class="font-mono text-tertiary font-bold">${fmtBRL(a.valor_total)}</td>
+                <td class="font-mono text-primary">${a.horimetro ? fmt(a.horimetro) + ' h' : '—'}</td>
+                <td class="flex items-center gap-1">
+                    <button class="action-btn text-gray-500 hover:text-secondary" title="Editar" onclick="editarAbastecimento(${a.id})">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button class="action-btn text-gray-500 hover:text-error" title="Excluir" onclick="deletarAbastecimento(${a.id})">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </td>
+            </tr>`).join('');
+        // update KPI combustivel
+        const totalComb = data.reduce((s, a) => s + parseFloat(a.valor_total || 0), 0);
+        document.getElementById('kpiCombustivel').textContent = fmtBRL(totalComb);
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-error py-6">${e.message}</td></tr>`;
+    }
+}
+
+// ─── Load: Usos ───────────────────────────────────────────────────────────────
+async function carregarUsos() {
+    const tbody = document.getElementById('tbodyUsos');
+    try {
+        const data = await apiFetch('/usos/');
+        usos = data;
+        tbody.innerHTML = data.length === 0 ?
+            `<tr><td colspan="8" class="text-center text-gray-600 py-10">Nenhum registro de uso.</td></tr>` :
+            data.map(u => `
+            <tr>
+                <td>${fmtDate(u.data)}</td>
+                <td>${u.maquina_nome}</td>
+                <td>${u.talhao_nome}</td>
+                <td><span class="badge badge-info">${u.atividade_display}</span></td>
+                <td class="font-mono text-primary font-bold">${fmt(u.horas_trabalhadas)} h</td>
+                <td class="text-gray-400">${u.operador || '—'}</td>
+                <td class="font-mono text-tertiary">${fmtBRL(u.custo_operacional)}</td>
+                <td class="flex items-center gap-1">
+                    <button class="action-btn text-gray-500 hover:text-secondary" title="Editar" onclick="editarUso(${u.id})">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button class="action-btn text-gray-500 hover:text-error" title="Excluir" onclick="deletarUso(${u.id})">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </td>
+            </tr>`).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-error py-6">${e.message}</td></tr>`;
+    }
+}
+
+// ─── Load: Manutenções ────────────────────────────────────────────────────────
+async function carregarManutencoes() {
+    const tbody = document.getElementById('tbodyManutencoes');
+    try {
+        let url = '/manutencoes/?';
+        const tipo = document.getElementById('filtroManutTipo')?.value;
+        if (tipo) url += `tipo=${tipo}&`;
+        const data = await apiFetch(url);
+        manutencoes = data;
+        const totalManut = data.reduce((s, a) => s + parseFloat(a.custo || 0), 0);
+        document.getElementById('kpiManutencao').textContent = fmtBRL(totalManut);
+        tbody.innerHTML = data.length === 0 ?
+            `<tr><td colspan="7" class="text-center text-gray-600 py-10">Nenhuma manutenção registrada.</td></tr>` :
+            data.map(mn => `
+            <tr>
+                <td>${fmtDate(mn.data)}</td>
+                <td>${mn.maquina_nome}</td>
+                <td><span class="badge ${mn.tipo === 'corretiva' ? 'badge-danger' : mn.tipo === 'preventiva' ? 'badge-ok' : 'badge-warn'}">${mn.tipo_display}</span></td>
+                <td class="text-gray-300">${mn.descricao}</td>
+                <td class="font-mono text-tertiary font-bold">${fmtBRL(mn.custo)}</td>
+                <td class="text-gray-400">${mn.fornecedor || '—'}</td>
+                <td class="flex items-center gap-1">
+                    <button class="action-btn text-gray-500 hover:text-secondary" title="Editar" onclick="editarManutencao(${mn.id})">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button class="action-btn text-gray-500 hover:text-error" title="Excluir" onclick="deletarManutencao(${mn.id})">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </td>
+            </tr>`).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-error py-6">${e.message}</td></tr>`;
+    }
+}
+
+// ─── Load: Programações ───────────────────────────────────────────────────────
+async function carregarProgramacoes() {
+    const container = document.getElementById('programacoesList');
+    try {
+        const data = await apiFetch('/programacoes/');
+        programacoes = data;
+        if (data.length === 0) {
+            container.innerHTML = `<div class="kpi-card text-center text-gray-600 py-10">Nenhuma programação ativa.</div>`;
+            return;
+        }
+        container.innerHTML = data.map(p => {
+            const hAtual = parseFloat(p.horimetro_atual_maquina || 0);
+            const hLimite = parseFloat(p.horimetro_limite || 0);
+            const hRestantes = hLimite ? Math.max(hLimite - hAtual, 0).toFixed(1) : null;
+            return `
+            <div class="kpi-card flex items-center gap-4">
+                <span class="material-symbols-outlined text-2xl ${p.concluida ? 'text-primary' : 'text-tertiary'}">
+                    ${p.concluida ? 'check_circle' : 'schedule'}
+                </span>
+                <div class="flex-1">
+                    <p class="text-white font-bold text-sm">${p.descricao}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${p.maquina_nome}
+                        ${p.data_limite ? ' · Até ' + fmtDate(p.data_limite) : ''}
+                        ${hRestantes !== null ? ' · ' + hRestantes + ' h restantes' : ''}
+                    </p>
+                </div>
+                <div class="flex items-center gap-1">
+                    ${!p.concluida ? `
+                    <button class="btn-ghost text-xs py-2 px-3" onclick="resolverProgramacao(${p.id})">
+                        <span class="material-symbols-outlined text-sm text-primary">check</span>
+                    </button>` : ''}
+                    <button class="action-btn text-gray-500 hover:text-secondary" title="Editar" onclick="editarProgramacao(${p.id})">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button class="action-btn text-gray-500 hover:text-error" title="Excluir" onclick="deletarProgramacao(${p.id})">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="text-error text-center py-6">${e.message}</div>`;
+    }
+}
+
+// ─── Load: Alertas ────────────────────────────────────────────────────────────
+async function carregarAlertas() {
+    const container = document.getElementById('alertasList');
+    try {
+        const alertas = await apiFetch('/alertas/');
+        document.getElementById('kpiAlertas').textContent = alertas.length;
+        if (alertas.length > 0) {
+            const badge = document.getElementById('alertBadge');
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+            document.getElementById('alertBadgeText').textContent = `${alertas.length} alerta${alertas.length > 1 ? 's' : ''}`;
+        } else {
+            const badge = document.getElementById('alertBadge');
+            badge.classList.remove('flex');
+            badge.classList.add('hidden');
+        }
+        container.innerHTML = alertas.length === 0 ?
+            `<div class="kpi-card text-center text-gray-600 py-6 flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-primary">check_circle</span>
+                <span class="text-sm text-gray-400">Nenhum alerta pendente. Tudo em dia!</span>
+             </div>` :
+            alertas.map(a => `
+            <div class="alert-item ${a.status === 'critico' ? 'critical' : ''}">
+                <span class="material-symbols-outlined ${a.status === 'critico' ? 'text-error' : 'text-tertiary'} text-2xl">
+                    ${a.status === 'critico' ? 'error' : 'warning'}
+                </span>
+                <div>
+                    <p class="text-white font-bold text-sm">${a.descricao}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${a.maquina_nome} · ${a.motivo}</p>
+                </div>
+            </div>`).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="text-error text-center py-6">${e.message}</div>`;
+    }
+}
+
+// ─── Load: Consolidado ────────────────────────────────────────────────────────
+async function carregarConsolidado() {
+    const container = document.getElementById('consolidadoList');
+    try {
+        let url = '/consolidado/?';
+        const safra = document.getElementById('filtroConsSafra')?.value;
+        const talhao = document.getElementById('filtroConsTalhao')?.value;
+        const di = document.getElementById('filtroConsInicio')?.value;
+        const df = document.getElementById('filtroConsFim')?.value;
+        if (safra) url += `safra_id=${safra}&`;
+        if (talhao) url += `talhao_id=${talhao}&`;
+        if (di) url += `data_inicio=${di}&`;
+        if (df) url += `data_fim=${df}&`;
+
+        const data = await apiFetch(url);
+        if (!data || data.custo_total === 0) {
+            container.innerHTML = `<div class="kpi-card text-center text-gray-600 py-6">Sem dados para consolidar.</div>`;
+            return;
+        }
+        container.innerHTML = `
+            <div class="kpi-card mb-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400 text-xs font-headline font-bold uppercase tracking-widest">Custo Total Operacional</span>
+                    <span class="font-mono font-bold text-white text-lg">${fmtBRL(data.custo_total)}</span>
+                </div>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary text-sm">local_gas_station</span><span class="text-gray-300 text-sm">Combustível</span></div>
+                <span class="font-mono font-bold text-secondary">${fmtBRL(data.custo_combustivel)}</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <div class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary text-sm">build</span><span class="text-gray-300 text-sm">Manutenção</span></div>
+                <span class="font-mono font-bold text-tertiary">${fmtBRL(data.custo_manutencao)}</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-sm">timer</span><span class="text-gray-300 text-sm">Horas-Máquina</span></div>
+                <span class="font-mono font-bold text-primary">${fmtBRL(data.custo_horas_maquina)}</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <div class="flex items-center gap-2"><span class="material-symbols-outlined text-gray-400 text-sm">schedule</span><span class="text-gray-300 text-sm">Total Horas Trabalhadas</span></div>
+                <span class="font-mono text-gray-300">${fmt(data.total_horas_trabalhadas)} h</span>
+            </div>`;
+    } catch (e) {
+        container.innerHTML = `<div class="text-error text-center py-6">${e.message}</div>`;
+    }
+}
+
+// ─── CRUD: Máquinas ───────────────────────────────────────────────────────────
+async function submitMaquina(e) {
+    e.preventDefault();
+    const editId = document.getElementById('maquinaEditId').value;
+    const payload = {
+        nome: document.getElementById('maquinaNome').value,
+        modelo: document.getElementById('maquinaModelo').value,
+        categoria: document.getElementById('maquinaCategoria').value,
+        horimetro_atual: parseFloat(document.getElementById('maquinaHorimetro').value || 0),
+        custo_hora: parseFloat(document.getElementById('maquinaCustoHora').value || 0),
+    };
+    try {
+        if (editId) {
+            await apiFetch(`/maquinas/${editId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+            await apiFetch('/maquinas/', { method: 'POST', body: JSON.stringify(payload) });
+        }
+        closeModal('maquina');
+        carregarMaquinas();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+function editarMaquina(id) {
+    const m = maquinas.find(x => x.id === id);
+    if (!m) return;
+    document.getElementById('maquinaEditId').value = m.id;
+    document.getElementById('maquinaNome').value = m.nome;
+    document.getElementById('maquinaModelo').value = m.modelo || '';
+    document.getElementById('maquinaCategoria').value = m.categoria;
+    document.getElementById('maquinaHorimetro').value = m.horimetro_atual;
+    document.getElementById('maquinaCustoHora').value = m.custo_hora;
+    document.getElementById('modalMaquinaTitle').textContent = 'Editar Máquina';
+    document.getElementById('btnSubmitMaquina').textContent = 'Salvar Alterações';
+    openModal('maquina');
+}
+
+async function desativarMaquina(id) {
+    if (!confirm('Desativar esta máquina?')) return;
+    try {
+        await apiFetch(`/maquinas/${id}/`, { method: 'DELETE' });
+        carregarMaquinas();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+// ─── CRUD: Abastecimentos ─────────────────────────────────────────────────────
+async function submitAbastecimento(e) {
+    e.preventDefault();
+    const editId = document.getElementById('abastEditId').value;
+    const payload = {
+        maquina_id: parseInt(document.getElementById('abastMaquina').value),
+        safra_id: parseInt(document.getElementById('abastSafra').value),
+        data: document.getElementById('abastData').value,
+        tipo_combustivel: document.getElementById('abastTipo').value,
+        quantidade: parseFloat(document.getElementById('abastQtd').value),
+        valor_total: parseFloat(document.getElementById('abastValor').value),
+        horimetro: document.getElementById('abastHorimetro').value ? parseFloat(document.getElementById('abastHorimetro').value) : null,
+        observacao: document.getElementById('abastObs').value,
+    };
+    try {
+        if (editId) {
+            await apiFetch(`/abastecimentos/${editId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+            await apiFetch('/abastecimentos/', { method: 'POST', body: JSON.stringify(payload) });
+        }
+        closeModal('abastecimento');
+        carregarAbastecimentos();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+function editarAbastecimento(id) {
+    const ab = abastecimentos.find(x => x.id === id);
+    if (!ab) return;
+    document.getElementById('abastEditId').value = ab.id;
+    openModal('abastecimento');
+    document.getElementById('abastMaquina').value = ab.maquina;
+    document.getElementById('abastSafra').value = ab.safra;
+    document.getElementById('abastData').value = ab.data;
+    document.getElementById('abastTipo').value = ab.tipo_combustivel.toLowerCase();
+    document.getElementById('abastQtd').value = ab.quantidade;
+    document.getElementById('abastValor').value = ab.valor_total;
+    document.getElementById('abastHorimetro').value = ab.horimetro || '';
+    document.getElementById('abastObs').value = ab.observacao || '';
+    document.getElementById('modalAbastTitle').textContent = 'Editar Abastecimento';
+}
+
+async function deletarAbastecimento(id) {
+    if (!confirm('Excluir este abastecimento?')) return;
+    await apiFetch(`/abastecimentos/${id}/`, { method: 'DELETE' });
+    carregarAbastecimentos();
+}
+
+// ─── CRUD: Usos ───────────────────────────────────────────────────────────────
+async function submitUso(e) {
+    e.preventDefault();
+    const editId = document.getElementById('usoEditId').value;
+    const payload = {
+        maquina_id: parseInt(document.getElementById('usoMaquina').value),
+        talhao_id: parseInt(document.getElementById('usoTalhao').value),
+        safra_id: parseInt(document.getElementById('usoSafra').value),
+        data: document.getElementById('usoData').value,
+        hora_inicio: document.getElementById('usoInicio').value || '00:00',
+        hora_fim: document.getElementById('usoFim').value || '00:00',
+        horas_trabalhadas: parseFloat(document.getElementById('usoHoras').value),
+        atividade: document.getElementById('usoAtividade').value,
+        operador: document.getElementById('usoOperador').value,
+        observacao: document.getElementById('usoObs').value,
+    };
+    try {
+        if (editId) {
+            await apiFetch(`/usos/${editId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+            await apiFetch('/usos/', { method: 'POST', body: JSON.stringify(payload) });
+        }
+        closeModal('uso');
+        carregarUsos();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+function editarUso(id) {
+    const u = usos.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('usoEditId').value = u.id;
+    openModal('uso');
+    document.getElementById('usoMaquina').value = u.maquina;
+    document.getElementById('usoTalhao').value = u.talhao;
+    document.getElementById('usoSafra').value = u.safra;
+    document.getElementById('usoData').value = u.data;
+    document.getElementById('usoInicio').value = u.hora_inicio.slice(0, 5);
+    document.getElementById('usoFim').value = u.hora_fim.slice(0, 5);
+    document.getElementById('usoHoras').value = u.horas_trabalhadas;
+    document.getElementById('usoAtividade').value = u.atividade;
+    document.getElementById('usoOperador').value = u.operador || '';
+    document.getElementById('usoObs').value = u.observacao || '';
+    document.getElementById('modalUso').querySelector('h3').textContent = 'Editar Uso de Máquina';
+}
+
+async function deletarUso(id) {
+    if (!confirm('Excluir este registro de uso?')) return;
+    await apiFetch(`/usos/${id}/`, { method: 'DELETE' });
+    carregarUsos();
+}
+
+// ─── CRUD: Manutenções ────────────────────────────────────────────────────────
+async function submitManutencao(e) {
+    e.preventDefault();
+    const editId = document.getElementById('manutEditId').value;
+    const payload = {
+        maquina_id: parseInt(document.getElementById('manutMaquina').value),
+        safra_id: parseInt(document.getElementById('manutSafra').value),
+        tipo: document.getElementById('manutTipo').value,
+        data: document.getElementById('manutData').value,
+        descricao: document.getElementById('manutDescricao').value,
+        custo: parseFloat(document.getElementById('manutCusto').value),
+        fornecedor: document.getElementById('manutFornecedor').value,
+        observacao: document.getElementById('manutObs').value,
+    };
+    try {
+        if (editId) {
+            await apiFetch(`/manutencoes/${editId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+            await apiFetch('/manutencoes/', { method: 'POST', body: JSON.stringify(payload) });
+        }
+        closeModal('manutencao');
+        carregarManutencoes();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+function editarManutencao(id) {
+    const mn = manutencoes.find(x => x.id === id);
+    if (!mn) return;
+    document.getElementById('manutEditId').value = mn.id;
+    openModal('manutencao');
+    document.getElementById('manutMaquina').value = mn.maquina;
+    document.getElementById('manutSafra').value = mn.safra;
+    document.getElementById('manutTipo').value = mn.tipo;
+    document.getElementById('manutData').value = mn.data;
+    document.getElementById('manutDescricao').value = mn.descricao;
+    document.getElementById('manutCusto').value = mn.custo;
+    document.getElementById('manutFornecedor').value = mn.fornecedor || '';
+    document.getElementById('manutObs').value = mn.observacao || '';
+    document.getElementById('modalManutTitle').textContent = 'Editar Manutenção';
+}
+
+async function deletarManutencao(id) {
+    if (!confirm('Excluir esta manutenção?')) return;
+    await apiFetch(`/manutencoes/${id}/`, { method: 'DELETE' });
+    carregarManutencoes();
+}
+
+// ─── CRUD: Programações ───────────────────────────────────────────────────────
+async function submitProgramacao(e) {
+    e.preventDefault();
+    const editId = document.getElementById('progEditId').value;
+    const crit = document.getElementById('progCriterio').value;
+    const payload = {
+        maquina_id: parseInt(document.getElementById('progMaquina').value),
+        descricao: document.getElementById('progDescricao').value,
+        criterio: crit,
+        data_limite: (crit !== 'horimetro' && document.getElementById('progDataLimite').value) ? document.getElementById('progDataLimite').value : null,
+        horimetro_limite: (crit !== 'data' && document.getElementById('progHorimetroLimite').value) ? parseFloat(document.getElementById('progHorimetroLimite').value) : null,
+        dias_alerta: parseInt(document.getElementById('progDiasAlerta').value || 15),
+        horas_alerta: parseFloat(document.getElementById('progHorasAlerta').value || 20),
+    };
+    try {
+        if (editId) {
+            await apiFetch(`/programacoes/${editId}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+            await apiFetch('/programacoes/', { method: 'POST', body: JSON.stringify(payload) });
+        }
+        closeModal('programacao');
+        carregarProgramacoes();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+function editarProgramacao(id) {
+    const p = programacoes.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('progEditId').value = p.id;
+    openModal('programacao');
+    document.getElementById('progMaquina').value = p.maquina;
+    document.getElementById('progCriterio').value = p.criterio;
+    toggleCriterio();
+    document.getElementById('progDescricao').value = p.descricao;
+    document.getElementById('progDataLimite').value = p.data_limite || '';
+    document.getElementById('progHorimetroLimite').value = p.horimetro_limite || '';
+    document.getElementById('progDiasAlerta').value = p.dias_alerta;
+    document.getElementById('progHorasAlerta').value = p.horas_alerta;
+    document.getElementById('modalProgramacao').querySelector('h3').textContent = 'Editar Programação';
+}
+
+async function resolverProgramacao(id) {
+    try {
+        await apiFetch(`/programacoes/${id}/resolver/`, { method: 'POST' });
+        carregarProgramacoes();
+    } catch (err) { alert('Erro: ' + err.message); }
+}
+
+async function deletarProgramacao(id) {
+    if (!confirm('Excluir este agendamento?')) return;
+    await apiFetch(`/programacoes/${id}/`, { method: 'DELETE' });
+    carregarProgramacoes();
+}
+
+// ─── Histórico ────────────────────────────────────────────────────────────────
+async function verHistorico(id, nome) {
+    document.getElementById('historicoTitle').textContent = nome;
+    document.getElementById('historicoSubtitle').textContent = 'Ciclo de vida completo';
+    document.getElementById('modalHistorico').classList.remove('hidden');
+    const content = document.getElementById('historicoContent');
+    try {
+        const h = await apiFetch(`/maquinas/${id}/historico/`);
+        const ind = h.indicadores || {};
+        const maq = h.maquina || {};
+        
+        content.innerHTML = `
+            <!-- Indicadores -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="kpi-card !p-3"><div class="kpi-label" style="font-size:0.5rem">Combustível</div><div class="kpi-value text-secondary" style="font-size:1.1rem">${fmtBRL(ind.total_gasto_combustivel)}</div></div>
+                <div class="kpi-card !p-3"><div class="kpi-label" style="font-size:0.5rem">Manutenção</div><div class="kpi-value text-tertiary" style="font-size:1.1rem">${fmtBRL(ind.total_gasto_manutencao)}</div></div>
+                <div class="kpi-card !p-3"><div class="kpi-label" style="font-size:0.5rem">Horas Trabalhadas</div><div class="kpi-value text-primary" style="font-size:1.1rem">${fmt(ind.total_horas_trabalhadas)} h</div></div>
+                <div class="kpi-card !p-3"><div class="kpi-label" style="font-size:0.5rem">Custo Acumulado</div><div class="kpi-value text-white" style="font-size:1.1rem">${fmtBRL(ind.custo_operacional_acumulado)}</div></div>
+            </div>
+            
+            <!-- Info Máquina e Histórico Tabs -->
+            <div class="border-b border-white/5 mb-4 flex gap-1 overflow-x-auto" style="scrollbar-width:none">
+                <button class="modal-tab active" data-m-tab="hist-resumo" onclick="switchModalTab('hist-resumo')">Resumo</button>
+                <button class="modal-tab" data-m-tab="hist-abast" onclick="switchModalTab('hist-abast')">Abastecimentos (${(h.abastecimentos || []).length})</button>
+                <button class="modal-tab" data-m-tab="hist-manut" onclick="switchModalTab('hist-manut')">Manutenções (${(h.manutencoes || []).length})</button>
+                <button class="modal-tab" data-m-tab="hist-usos" onclick="switchModalTab('hist-usos')">Uso de Máquina (${(h.usos || []).length})</button>
+            </div>
+
+            <!-- Tab Panel: Resumo -->
+            <div id="m-tab-hist-resumo" class="modal-tab-panel active space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="field-label">Especificações</h4>
+                        <div class="kpi-card space-y-1 !py-3">
+                            <p class="text-xs text-gray-400"><span class="text-gray-600">Modelo:</span> ${maq.modelo || '—'}</p>
+                            <p class="text-xs text-gray-400"><span class="text-gray-600">Categoria:</span> ${maq.categoria_display}</p>
+                            <p class="text-xs text-gray-400"><span class="text-gray-600">Horímetro Atual:</span> <span class="text-primary font-mono">${fmt(maq.horimetro_atual)} h</span></p>
+                            <p class="text-xs text-gray-400"><span class="text-gray-600">Custo/Hora:</span> <span class="font-mono">${fmtBRL(maq.custo_hora)}</span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="field-label">Talhões Atendidos</h4>
+                        <div class="kpi-card !py-3 flex flex-wrap gap-1">
+                            ${(h.talhoes_atendidos || []).length === 0 ?
+                                '<span class="text-gray-600 text-xs">Nenhum talhão registrado</span>' :
+                                (h.talhoes_atendidos || []).map(t => `<span class="badge badge-ok">${t.nome}</span>`).join('')
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="field-label">Safras Vinculadas</h4>
+                    <div class="kpi-card !py-3 flex flex-wrap gap-1">
+                        ${(h.safras_vinculadas || []).length === 0 ?
+                            '<span class="text-gray-600 text-xs">Nenhuma safra vinculada</span>' :
+                            (h.safras_vinculadas || []).map(s => `<span class="badge badge-info">${s.nome}</span>`).join('')
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Panel: Abastecimentos -->
+            <div id="m-tab-hist-abast" class="modal-tab-panel max-h-80 overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="py-2 text-[10px] text-gray-500">Data</th>
+                            <th class="py-2 text-[10px] text-gray-500">Combustível</th>
+                            <th class="py-2 text-[10px] text-gray-500">Qtd (L)</th>
+                            <th class="py-2 text-[10px] text-gray-500">Custo</th>
+                            <th class="py-2 text-[10px] text-gray-500">Safra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(h.abastecimentos || []).length === 0 ?
+                            '<tr><td colspan="5" class="py-4 text-center text-gray-600 text-xs">Sem abastecimentos registrados</td></tr>' :
+                            (h.abastecimentos || []).map(a => `
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-2 text-xs">${fmtDate(a.data)}</td>
+                                <td class="py-2 text-xs">${a.tipo_combustivel}</td>
+                                <td class="py-2 text-xs font-mono">${fmt(a.quantidade)} L</td>
+                                <td class="py-2 text-xs font-mono text-secondary">${fmtBRL(a.valor_total)}</td>
+                                <td class="py-2 text-xs">${a.safra_nome}</td>
+                            </tr>`).join('')
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab Panel: Manutenções -->
+            <div id="m-tab-hist-manut" class="modal-tab-panel max-h-80 overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="py-2 text-[10px] text-gray-500">Data</th>
+                            <th class="py-2 text-[10px] text-gray-500">Tipo</th>
+                            <th class="py-2 text-[10px] text-gray-500">Descrição</th>
+                            <th class="py-2 text-[10px] text-gray-500">Custo</th>
+                            <th class="py-2 text-[10px] text-gray-500">Safra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(h.manutencoes || []).length === 0 ?
+                            '<tr><td colspan="5" class="py-4 text-center text-gray-600 text-xs">Sem manutenções registradas</td></tr>' :
+                            (h.manutencoes || []).map(mn => `
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-2 text-xs">${fmtDate(mn.data)}</td>
+                                <td class="py-2 text-xs"><span class="badge ${mn.tipo === 'corretiva' ? 'badge-danger' : mn.tipo === 'preventiva' ? 'badge-ok'}">${mn.tipo_display}</span></td>
+                                <td class="py-2 text-xs">${mn.descricao}</td>
+                                <td class="py-2 text-xs font-mono text-tertiary">${fmtBRL(mn.custo)}</td>
+                                <td class="py-2 text-xs">${mn.safra_nome}</td>
+                            </tr>`).join('')
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tab Panel: Uso de Máquina -->
+            <div id="m-tab-hist-usos" class="modal-tab-panel max-h-80 overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="py-2 text-[10px] text-gray-500">Data</th>
+                            <th class="py-2 text-[10px] text-gray-500">Talhão</th>
+                            <th class="py-2 text-[10px] text-gray-500">Atividade</th>
+                            <th class="py-2 text-[10px] text-gray-500">Horas</th>
+                            <th class="py-2 text-[10px] text-gray-500">Safra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(h.usos || []).length === 0 ?
+                            '<tr><td colspan="5" class="py-4 text-center text-gray-600 text-xs">Sem registros de uso</td></tr>' :
+                            (h.usos || []).map(u => `
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-2 text-xs">${fmtDate(u.data)}</td>
+                                <td class="py-2 text-xs">${u.talhao_nome}</td>
+                                <td class="py-2 text-xs"><span class="badge badge-info">${u.atividade_display}</span></td>
+                                <td class="py-2 text-xs font-mono text-primary">${fmt(u.horas_trabalhadas)} h</td>
+                                <td class="py-2 text-xs">${u.safra_nome}</td>
+                            </tr>`).join('')
+                        }
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (err) {
+        content.innerHTML = `<div class="text-error text-center py-8">${err.message}</div>`;
+    }
+}
+
+function switchModalTab(tab) {
+    document.querySelectorAll('.modal-tab').forEach(b => b.classList.toggle('active', b.dataset.mTab === tab));
+    document.querySelectorAll('.modal-tab-panel').forEach(p => p.classList.toggle('active', p.id === `m-tab-${tab}`));
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+    try {
+        // Load farm name
+        const propRes = await fetch(`/api/propriedades/${PROP_ID}/`, { headers: { 'Accept': 'application/json' } });
+        if (propRes.ok) {
+            const prop = await propRes.json();
+            document.getElementById('breadcrumbFarm').textContent = prop.nome;
+            document.getElementById('pageTitle').textContent = prop.nome;
+        }
+    } catch (_) {}
+
+    try {
+        // Load safras for selects
+        const safraRes = await fetch(`/api/v1/propriedades/${PROP_ID}/safras/`, { headers: { 'Accept': 'application/json' } });
+        if (safraRes.ok) {
+            safras = await safraRes.json();
+            populateSafraFilters();
+        }
+    } catch (_) {}
+
+    try {
+        // Load talhoes for selects
+        const talhaoRes = await fetch(`/api/propriedades/${PROP_ID}/talhoes/`, { headers: { 'Accept': 'application/json' } });
+        if (talhaoRes.ok) {
+            talhoes = await talhaoRes.json();
+            populateTalhaoFilters();
+        }
+    } catch (_) {}
+
+    // Initial loads
+    await carregarMaquinas();
+    carregarAlertas();
+    carregarConsolidado();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

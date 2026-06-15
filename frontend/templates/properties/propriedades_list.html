@@ -39,11 +39,18 @@
             <span class="material-symbols-outlined">landscape</span>
             <span class="font-headline font-bold tracking-tight uppercase text-xs">Propriedades</span>
         </a>
-        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_planting:simulacao_list' %}">
-            <span class="material-symbols-outlined">model_training</span>
-            <span class="font-headline font-bold tracking-tight uppercase text-xs">Simulação</span>
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_weather:dashboard' %}">
+            <span class="material-symbols-outlined">wb_sunny</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Clima</span>
         </a>
-        <!-- Restante do menu (ocultado aqui por brevidade visual na UI base) -->
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_operational:select' %}">
+            <span class="material-symbols-outlined">precision_manufacturing</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Operacional</span>
+        </a>
+        <a class="flex items-center gap-4 py-3 px-4 text-gray-500 hover:text-white hover:translate-x-2 transition-all duration-300 group" href="{% url 'web_estoque:select' %}">
+            <span class="material-symbols-outlined">inventory_2</span>
+            <span class="font-headline font-bold tracking-tight uppercase text-xs">Estoque</span>
+        </a>
     </nav>
     <div class="mt-auto pt-8 border-t border-white/5">
         <div class="flex items-center gap-4">
