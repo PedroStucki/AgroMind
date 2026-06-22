@@ -243,16 +243,17 @@ def get_consolidado_custos(
         manutencoes = manutencoes.filter(maquina_id__in=maquinas_do_talhao)
 
     # 6. Agregações
-    total_combustivel = abastecimentos.aggregate(total=Sum("valor_total"))["total"] or 0.0
-    total_manutencao = manutencoes.aggregate(total=Sum("custo"))["total"] or 0.0
+    from decimal import Decimal
+    total_combustivel = Decimal(abastecimentos.aggregate(total=Sum("valor_total"))["total"] or 0)
+    total_manutencao = Decimal(manutencoes.aggregate(total=Sum("custo"))["total"] or 0)
 
     # Para horas-máquina: somatório de (horas_trabalhadas * maquina__custo_hora)
-    total_horas_maquina = usos.annotate(
+    total_horas_maquina = Decimal(usos.annotate(
         custo_op=F("horas_trabalhadas") * F("maquina__custo_hora")
-    ).aggregate(total=Sum("custo_op"))["total"] or 0.0
+    ).aggregate(total=Sum("custo_op"))["total"] or 0)
 
     # Total de horas registradas
-    total_horas = usos.aggregate(total=Sum("horas_trabalhadas"))["total"] or 0.0
+    total_horas = Decimal(usos.aggregate(total=Sum("horas_trabalhadas"))["total"] or 0)
 
     return {
         "custo_combustivel": float(total_combustivel),

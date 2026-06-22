@@ -763,11 +763,19 @@ function csrfToken() {
 
 async function apiFetch(path, options = {}) {
     const res = await fetch(`${API}${path}`, {
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken(), ...options.headers },
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRFToken': csrfToken(),
+            ...options.headers
+        },
+        credentials: 'same-origin',
         ...options,
     });
+    console.log("Resposta API:", res);
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+        console.error('[Operacional] Erro na API:', path, res.status, err);
         throw new Error(err.detail || JSON.stringify(err) || `HTTP ${res.status}`);
     }
     if (res.status === 204) return null;
@@ -781,6 +789,7 @@ const fmtDate = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('pt-BR') :
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
+    console.log("Aba clicada:", tab);
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
     if (tab === 'maquinas') carregarMaquinas();
@@ -902,7 +911,15 @@ async function carregarMaquinas() {
             if (cur) filtroAbast.value = cur;
         }
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-error py-6">${e.message}</td></tr>`;
+        console.error('[Operacional] Erro ao carregar máquinas:', e);
+        document.getElementById('kpiMaquinas').textContent = '0';
+        tbody.innerHTML = `
+            <tr><td colspan="6" class="py-8">
+                <div class="text-center space-y-3">
+                    <p class="text-gray-400 text-sm">Não foi possível carregar as máquinas.</p>
+                    <button onclick="carregarMaquinas()" class="btn-ghost text-xs">Tentar novamente</button>
+                </div>
+            </td></tr>`;
     }
 }
 
@@ -1089,7 +1106,16 @@ async function carregarAlertas() {
                 </div>
             </div>`).join('');
     } catch (e) {
-        container.innerHTML = `<div class="text-error text-center py-6">${e.message}</div>`;
+        console.error('[Operacional] Erro ao carregar alertas:', e);
+        document.getElementById('kpiAlertas').textContent = '0';
+        const badge = document.getElementById('alertBadge');
+        badge.classList.remove('flex');
+        badge.classList.add('hidden');
+        container.innerHTML = `
+            <div class="kpi-card text-center py-6 space-y-3">
+                <p class="text-gray-400 text-sm">Não foi possível carregar os alertas.</p>
+                <button onclick="carregarAlertas()" class="btn-ghost text-xs">Tentar novamente</button>
+            </div>`;
     }
 }
 
@@ -1107,7 +1133,15 @@ async function carregarConsolidado() {
         if (di) url += `data_inicio=${di}&`;
         if (df) url += `data_fim=${df}&`;
 
+        console.log('[Operacional] Carregando consolidado:', url);
         const data = await apiFetch(url);
+        console.log('[Operacional] Consolidado recebido:', data);
+
+        // ── Sempre atualiza os KPI cards com os dados retornados ──────────────
+        // Mesmo quando custo_total === 0, os cards devem mostrar R$ 0,00
+        document.getElementById('kpiCombustivel').textContent = fmtBRL(data.custo_combustivel || 0);
+        document.getElementById('kpiManutencao').textContent = fmtBRL(data.custo_manutencao || 0);
+
         if (!data || data.custo_total === 0) {
             container.innerHTML = `<div class="kpi-card text-center text-gray-600 py-6">Sem dados para consolidar.</div>`;
             return;
@@ -1136,7 +1170,14 @@ async function carregarConsolidado() {
                 <span class="font-mono text-gray-300">${fmt(data.total_horas_trabalhadas)} h</span>
             </div>`;
     } catch (e) {
-        container.innerHTML = `<div class="text-error text-center py-6">${e.message}</div>`;
+        console.error('[Operacional] Erro ao carregar consolidado:', e);
+        document.getElementById('kpiCombustivel').textContent = fmtBRL(0);
+        document.getElementById('kpiManutencao').textContent = fmtBRL(0);
+        container.innerHTML = `
+            <div class="kpi-card text-center py-6 space-y-3">
+                <p class="text-gray-400 text-sm">Não foi possível carregar os dados operacionais.</p>
+                <button onclick="carregarConsolidado()" class="btn-ghost text-xs">Tentar novamente</button>
+            </div>`;
     }
 }
 
@@ -1490,7 +1531,7 @@ async function verHistorico(id, nome) {
                             (h.manutencoes || []).map(mn => `
                             <tr class="border-b border-white/5 hover:bg-white/5">
                                 <td class="py-2 text-xs">${fmtDate(mn.data)}</td>
-                                <td class="py-2 text-xs"><span class="badge ${mn.tipo === 'corretiva' ? 'badge-danger' : mn.tipo === 'preventiva' ? 'badge-ok'}">${mn.tipo_display}</span></td>
+                                <td class="py-2 text-xs"><span class="badge ${mn.tipo === 'corretiva' ? 'badge-danger' : mn.tipo === 'preventiva' ? 'badge-ok' : 'badge-warn'}">${mn.tipo_display}</span></td>
                                 <td class="py-2 text-xs">${mn.descricao}</td>
                                 <td class="py-2 text-xs font-mono text-tertiary">${fmtBRL(mn.custo)}</td>
                                 <td class="py-2 text-xs">${mn.safra_nome}</td>
@@ -1540,38 +1581,75 @@ function switchModalTab(tab) {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
+    console.log("Dashboard carregado");
+    console.log("Propriedade:", PROP_ID);
+    console.log('[Operacional] Iniciando carregamento — propriedade_id:', PROP_ID);
+
+    // ── Carregar nome da propriedade ──────────────────────────────────────────
     try {
-        // Load farm name
-        const propRes = await fetch(`/api/propriedades/${PROP_ID}/`, { headers: { 'Accept': 'application/json' } });
+        const propRes = await fetch(`/api/propriedades/${PROP_ID}/`, {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin',
+        });
         if (propRes.ok) {
             const prop = await propRes.json();
             document.getElementById('breadcrumbFarm').textContent = prop.nome;
             document.getElementById('pageTitle').textContent = prop.nome;
+            console.log('[Operacional] Propriedade carregada:', prop.nome);
+        } else {
+            console.error('[Operacional] Propriedade retornou status:', propRes.status);
+            document.getElementById('breadcrumbFarm').textContent = `Propriedade #${PROP_ID}`;
         }
-    } catch (_) {}
+    } catch (err) {
+        console.error('[Operacional] Erro de rede ao carregar propriedade:', err);
+        document.getElementById('breadcrumbFarm').textContent = `Propriedade #${PROP_ID}`;
+    }
 
+    // ── Carregar safras para os selects ───────────────────────────────────────
     try {
-        // Load safras for selects
-        const safraRes = await fetch(`/api/v1/propriedades/${PROP_ID}/safras/`, { headers: { 'Accept': 'application/json' } });
+        const safraRes = await fetch(`/api/v1/propriedades/${PROP_ID}/safras/`, {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin',
+        });
         if (safraRes.ok) {
             safras = await safraRes.json();
             populateSafraFilters();
+            console.log('[Operacional] Safras carregadas:', safras.length);
+        } else {
+            console.error('[Operacional] Safras retornou status:', safraRes.status);
         }
-    } catch (_) {}
+    } catch (err) {
+        console.error('[Operacional] Erro ao carregar safras:', err);
+    }
 
+    // ── Carregar talhões para os selects ──────────────────────────────────────
     try {
-        // Load talhoes for selects
-        const talhaoRes = await fetch(`/api/propriedades/${PROP_ID}/talhoes/`, { headers: { 'Accept': 'application/json' } });
+        const talhaoRes = await fetch(`/api/propriedades/${PROP_ID}/talhoes/`, {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin',
+        });
         if (talhaoRes.ok) {
             talhoes = await talhaoRes.json();
             populateTalhaoFilters();
+            console.log('[Operacional] Talhões carregados:', talhoes.length);
+        } else {
+            console.error('[Operacional] Talhões retornou status:', talhaoRes.status);
         }
-    } catch (_) {}
+    } catch (err) {
+        console.error('[Operacional] Erro ao carregar talhões:', err);
+    }
 
-    // Initial loads
-    await carregarMaquinas();
+    // ── Carregamentos iniciais do dashboard ───────────────────────────────────
+    try {
+        await carregarMaquinas();
+    } catch (err) {
+        console.error('[Operacional] Erro ao carregar máquinas:', err);
+    }
+
     carregarAlertas();
     carregarConsolidado();
+
+    console.log('[Operacional] Inicialização concluída.');
 }
 
 document.addEventListener('DOMContentLoaded', init);

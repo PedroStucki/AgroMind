@@ -1,0 +1,19 @@
+# apps/financial/web_views.py
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from apps.properties.selectors import get_propriedades_by_user
+
+@login_required
+def financial_dashboard_view(request, propriedade_id):
+    """Renderiza o dashboard financeiro para uma propriedade específica."""
+    user_properties = get_propriedades_by_user(user=request.user)
+    propriedade_selecionada = user_properties.filter(id=propriedade_id).first()
+    
+    if not propriedade_selecionada:
+        # Se a propriedade não pertencer ao usuário, redireciona (aqui para dashboard geral, ou operacional_select se houver)
+        return redirect("users:dashboard")
+
+    return render(request, "financial/financial_dashboard.html", {
+        "user": request.user,
+        "propriedade_id": propriedade_id,
+    })

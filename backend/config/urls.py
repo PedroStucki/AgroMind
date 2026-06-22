@@ -17,6 +17,7 @@ urlpatterns = [
     path("plantio/", include("apps.planting.web_urls", namespace="web_planting")),
     path("clima/", include("apps.weather.web_urls", namespace="web_weather")),
     path("operacional/", include("apps.operational.web_urls", namespace="web_operational")),
+    path("financeiro/", include("apps.financial.web_urls", namespace="web_financial")),
 
     path("api/propriedades/", include("apps.properties.urls", namespace="properties")),
     path("api/weather/", include("apps.weather.urls", namespace="weather")),
@@ -26,6 +27,9 @@ urlpatterns = [
 
     # Sprint 07 — Controle Operacional
     path("api/v1/propriedades/<int:propriedade_id>/operacional/", include("apps.operational.urls", namespace="operational")),
+
+    # Módulo Financeiro
+    path("api/v1/propriedades/<int:propriedade_id>/financeiro/", include("apps.financial.api_urls", namespace="financial-api")),
 
     # Safras API (consumido pelo módulo operacional e estoque)
     path("api/v1/propriedades/<int:propriedade_id>/", include("apps.planting.api_urls", namespace="planting-api")),

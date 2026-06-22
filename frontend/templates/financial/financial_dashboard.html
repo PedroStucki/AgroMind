@@ -1,0 +1,586 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Financeiro — AgroMind Rural{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header & Breadcrumb -->
+    <div class="flex items-center justify-between">
+        <div>
+            <nav class="text-xs text-gray-500 font-mono tracking-wider mb-2 flex items-center gap-2">
+                <a href="{% url 'users:dashboard' %}" class="hover:text-primary transition-colors">INÍCIO</a>
+                <span>/</span>
+                <span id="breadcrumbFarm" class="text-gray-400">Carregando...</span>
+                <span>/</span>
+                <span class="text-primary font-bold">FINANCEIRO</span>
+            </nav>
+            <h1 class="text-3xl font-headline font-bold text-white tracking-tight" id="pageTitle">Módulo Financeiro</h1>
+        </div>
+        <div class="flex gap-2">
+            <select id="filtroSafra" class="bg-dark/40 border border-white/10 text-white text-sm rounded px-3 py-1.5 focus:border-primary outline-none transition-colors" onchange="carregarTudo()">
+                <option value="">Todas as Safras</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- KPIs Superiores -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="kpi-card relative overflow-hidden group">
+            <div class="kpi-label">Receita Total</div>
+            <div class="kpi-value text-secondary" id="kpiReceita">R$ 0,00</div>
+        </div>
+        <div class="kpi-card relative overflow-hidden group">
+            <div class="kpi-label">Custo Total (Despesas + Op)</div>
+            <div class="kpi-value text-error" id="kpiCusto">R$ 0,00</div>
+        </div>
+        <div class="kpi-card relative overflow-hidden group">
+            <div class="kpi-label">Lucro Líquido</div>
+            <div class="kpi-value text-white" id="kpiLucro">R$ 0,00</div>
+        </div>
+        <div class="kpi-card relative overflow-hidden group">
+            <div class="kpi-label">ROI (%)</div>
+            <div class="kpi-value text-primary" id="kpiRoi">0,00%</div>
+        </div>
+    </div>
+
+    <!-- Tabs Nav -->
+    <div class="border-b border-white/5 flex gap-4 overflow-x-auto" style="scrollbar-width: none;">
+        <button class="tab-btn active pb-3 text-sm font-bold tracking-wide transition-colors relative" data-tab="visao-geral" onclick="switchTab('visao-geral')">VISÃO GERAL</button>
+        <button class="tab-btn pb-3 text-sm font-bold tracking-wide transition-colors text-gray-500 hover:text-white" data-tab="despesas" onclick="switchTab('despesas')">DESPESAS DIRETAS</button>
+        <button class="tab-btn pb-3 text-sm font-bold tracking-wide transition-colors text-gray-500 hover:text-white" data-tab="receitas" onclick="switchTab('receitas')">RECEITAS</button>
+        <button class="tab-btn pb-3 text-sm font-bold tracking-wide transition-colors text-gray-500 hover:text-white" data-tab="fluxo-caixa" onclick="switchTab('fluxo-caixa')">FLUXO DE CAIXA</button>
+    </div>
+
+    <!-- Tab Panels -->
+    <!-- VISÃO GERAL -->
+    <div id="tab-visao-geral" class="tab-panel active space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Indicadores Adicionais -->
+            <div class="glass-panel p-5 rounded-xl border border-white/5">
+                <h3 class="text-sm font-headline font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-xl">insights</span>
+                    Métricas da Safra
+                </h3>
+                <div class="space-y-3" id="metricasList">
+                    <div class="kpi-card text-center text-gray-600 py-6">Carregando métricas...</div>
+                </div>
+            </div>
+            
+            <div class="glass-panel p-5 rounded-xl border border-white/5">
+                <h3 class="text-sm font-headline font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-xl">info</span>
+                    Composição dos Custos
+                </h3>
+                <div class="space-y-3" id="custosList">
+                    <div class="kpi-card text-center text-gray-600 py-6">Carregando custos...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DESPESAS -->
+    <div id="tab-despesas" class="tab-panel hidden space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-lg font-headline font-bold text-white">Lançamentos de Despesa</h2>
+            <button onclick="openModal('despesa')" class="btn-primary py-1.5 px-4 text-sm rounded flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add</span> Nova Despesa
+            </button>
+        </div>
+        <div class="glass-panel rounded-xl border border-white/5 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white/5 border-b border-white/10">
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Data</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Safra</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Categoria</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Valor</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyDespesas" class="divide-y divide-white/5">
+                        <tr><td colspan="6" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEITAS -->
+    <div id="tab-receitas" class="tab-panel hidden space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-lg font-headline font-bold text-white">Lançamentos de Receita</h2>
+            <button onclick="openModal('receita')" class="btn-primary py-1.5 px-4 text-sm rounded flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add</span> Nova Receita
+            </button>
+        </div>
+        <div class="glass-panel rounded-xl border border-white/5 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white/5 border-b border-white/10">
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Data</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Safra</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Produto/Comprador</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Quantidade</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Preço Unit.</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Valor Total</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyReceitas" class="divide-y divide-white/5">
+                        <tr><td colspan="7" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLUXO DE CAIXA -->
+    <div id="tab-fluxo-caixa" class="tab-panel hidden space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-lg font-headline font-bold text-white">Fluxo de Caixa Consolidado</h2>
+            <p class="text-xs text-gray-400">Inclui lançamentos financeiros e operacionais</p>
+        </div>
+        <div class="glass-panel rounded-xl border border-white/5 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white/5 border-b border-white/10">
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Data</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo/Categoria</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Valor</th>
+                            <th class="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Saldo Acumulado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyFluxoCaixa" class="divide-y divide-white/5">
+                        <tr><td colspan="5" class="text-center text-gray-600 py-10">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modals -->
+
+<!-- Modal Despesa -->
+<div id="modalDespesa" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-dark border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-white/10 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white" id="modalDespesaTitle">Nova Despesa</h3>
+            <button onclick="closeModal('despesa')" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1">
+            <form id="formDespesa" onsubmit="submitDespesa(event)" class="space-y-4">
+                <input type="hidden" id="despEditId">
+                <div>
+                    <label class="field-label">Safra <span class="text-error">*</span></label>
+                    <select id="despSafra" class="input-field" required></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Data <span class="text-error">*</span></label>
+                        <input type="date" id="despData" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Categoria <span class="text-error">*</span></label>
+                        <select id="despCategoria" class="input-field" required>
+                            <option value="insumos">Insumos</option>
+                            <option value="mao_de_obra">Mão de Obra</option>
+                            <option value="combustivel">Combustível</option>
+                            <option value="manutencao">Manutenção</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Descrição <span class="text-error">*</span></label>
+                    <input type="text" id="despDescricao" class="input-field" placeholder="Ex: Compra de Sementes" required>
+                </div>
+                <div>
+                    <label class="field-label">Valor (R$) <span class="text-error">*</span></label>
+                    <input type="number" step="0.01" id="despValor" class="input-field" required>
+                </div>
+                <div>
+                    <label class="field-label">Observação</label>
+                    <textarea id="despObs" class="input-field" rows="2"></textarea>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('despesa')" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                    <button type="submit" class="btn-primary px-6 py-2 rounded text-sm font-bold" id="btnSubmitDespesa">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Receita -->
+<div id="modalReceita" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-dark border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-white/10 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white" id="modalReceitaTitle">Nova Receita</h3>
+            <button onclick="closeModal('receita')" class="text-gray-400 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1">
+            <form id="formReceita" onsubmit="submitReceita(event)" class="space-y-4">
+                <input type="hidden" id="recEditId">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Safra <span class="text-error">*</span></label>
+                        <select id="recSafra" class="input-field" required></select>
+                    </div>
+                    <div>
+                        <label class="field-label">Data da Venda <span class="text-error">*</span></label>
+                        <input type="date" id="recData" class="input-field" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="field-label">Comprador <span class="text-error">*</span></label>
+                        <input type="text" id="recComprador" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Produto <span class="text-error">*</span></label>
+                        <input type="text" id="recProduto" class="input-field" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="field-label">Quantidade <span class="text-error">*</span></label>
+                        <input type="number" step="0.01" id="recQtd" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="field-label">Unidade</label>
+                        <select id="recUnidade" class="input-field" required>
+                            <option value="sacas">Sacas</option>
+                            <option value="kg">Kg</option>
+                            <option value="tonelada">Tonelada</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Preço (R$) <span class="text-error">*</span></label>
+                        <input type="number" step="0.01" id="recPreco" class="input-field" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label">Observação</label>
+                    <textarea id="recObs" class="input-field" rows="2"></textarea>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('receita')" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                    <button type="submit" class="btn-primary px-6 py-2 rounded text-sm font-bold" id="btnSubmitReceita">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PROP_ID = {{ propriedade_id }};
+const API = `/api/v1/propriedades/${PROP_ID}/financeiro`;
+let safras = [];
+let despesas = [];
+let receitas = [];
+
+function csrfToken() {
+    const m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+}
+
+async function apiFetch(path, options = {}) {
+    const res = await fetch(`${path.startsWith('/api') ? '' : API}${path}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRFToken': csrfToken(),
+            ...options.headers
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || JSON.stringify(err) || `HTTP ${res.status}`);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+const fmt = v => parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtBRL = v => 'R$ ' + fmt(v);
+const fmtDate = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        if(b.dataset.tab !== tab) { b.classList.add('text-gray-500'); b.classList.remove('text-white'); }
+        else { b.classList.remove('text-gray-500'); b.classList.add('text-white'); }
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== `tab-${tab}`));
+}
+
+function openModal(type) {
+    document.getElementById(`modal${capitalize(type)}`).classList.remove('hidden');
+    populateSafraSelect(`${type.slice(0,3)}Safra`);
+}
+function closeModal(type) {
+    document.getElementById(`modal${capitalize(type)}`).classList.add('hidden');
+    document.getElementById(`form${capitalize(type)}`).reset();
+    document.getElementById(`${type.slice(0,3)}EditId`).value = '';
+}
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function populateSafraSelect(id) {
+    const sel = document.getElementById(id);
+    if(sel) sel.innerHTML = safras.map(s => `<option value="${s.id}">${s.nome}</option>`).join('') || '<option value="">Nenhuma safra</option>';
+}
+
+async function carregarTudo() {
+    await carregarConsolidado();
+    await carregarDespesas();
+    await carregarReceitas();
+    await carregarFluxoCaixa();
+}
+
+async function carregarConsolidado() {
+    try {
+        let url = `/consolidado/`;
+        const sid = document.getElementById('filtroSafra').value;
+        if(sid) url += `?safra_id=${sid}`;
+        
+        const data = await apiFetch(url);
+        
+        // KPIs Superiores
+        document.getElementById('kpiReceita').textContent = fmtBRL(data.receita_total);
+        document.getElementById('kpiCusto').textContent = fmtBRL(data.custo_total);
+        document.getElementById('kpiLucro').textContent = fmtBRL(data.lucro_liquido);
+        document.getElementById('kpiRoi').textContent = fmt(data.roi) + '%';
+        
+        // Colors
+        document.getElementById('kpiLucro').className = `kpi-value ${data.lucro_liquido >= 0 ? 'text-ok' : 'text-error'}`;
+
+        // Métricas da Safra
+        document.getElementById('metricasList').innerHTML = `
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Margem Bruta</span>
+                <span class="font-mono font-bold text-white">${fmt(data.margem_bruta)}%</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Margem Líquida</span>
+                <span class="font-mono font-bold text-white">${fmt(data.margem_liquida)}%</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Custo por Hectare</span>
+                <span class="font-mono font-bold text-white">${fmtBRL(data.custo_por_hectare)} / ha</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Custo por Saca</span>
+                <span class="font-mono font-bold text-white">${fmtBRL(data.custo_por_saca)} / sc</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Ponto de Equilíbrio</span>
+                <span class="font-mono font-bold text-white">${fmt(data.ponto_equilibrio)} sc</span>
+            </div>
+        `;
+
+        // Composição dos Custos
+        document.getElementById('custosList').innerHTML = `
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Despesas Financeiras Diretas</span>
+                <span class="font-mono font-bold text-error">${fmtBRL(data.despesa_financeira)}</span>
+            </div>
+            <div class="kpi-card flex justify-between items-center">
+                <span class="text-gray-300 text-sm">Custos Operacionais Consolidado</span>
+                <span class="font-mono font-bold text-error">${fmtBRL(data.custo_operacional)}</span>
+            </div>
+        `;
+
+    } catch(e) { console.error(e); }
+}
+
+async function carregarDespesas() {
+    const tbody = document.getElementById('tbodyDespesas');
+    try {
+        let url = `/despesas/`;
+        const sid = document.getElementById('filtroSafra').value;
+        if(sid) url += `?safra_id=${sid}`;
+        const data = await apiFetch(url);
+        despesas = data;
+        tbody.innerHTML = data.length === 0 ? 
+            `<tr><td colspan="6" class="text-center text-gray-600 py-6">Nenhuma despesa registrada.</td></tr>` :
+            data.map(d => `
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="p-4 text-xs">${fmtDate(d.data)}</td>
+                <td class="p-4 text-xs">${d.safra_nome}</td>
+                <td class="p-4 text-xs"><span class="badge badge-warn">${d.categoria_display}</span></td>
+                <td class="p-4 text-xs">${d.descricao}</td>
+                <td class="p-4 text-xs font-mono text-error font-bold">${fmtBRL(d.valor)}</td>
+                <td class="p-4 text-xs flex gap-2">
+                    <button class="text-gray-500 hover:text-secondary" onclick="editarDespesa(${d.id})"><span class="material-symbols-outlined text-base">edit</span></button>
+                    <button class="text-gray-500 hover:text-error" onclick="deletarDespesa(${d.id})"><span class="material-symbols-outlined text-base">delete</span></button>
+                </td>
+            </tr>`).join('');
+    } catch(e) { console.error(e); }
+}
+
+async function carregarReceitas() {
+    const tbody = document.getElementById('tbodyReceitas');
+    try {
+        let url = `/receitas/`;
+        const sid = document.getElementById('filtroSafra').value;
+        if(sid) url += `?safra_id=${sid}`;
+        const data = await apiFetch(url);
+        receitas = data;
+        tbody.innerHTML = data.length === 0 ? 
+            `<tr><td colspan="7" class="text-center text-gray-600 py-6">Nenhuma receita registrada.</td></tr>` :
+            data.map(r => `
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="p-4 text-xs">${fmtDate(r.data_venda)}</td>
+                <td class="p-4 text-xs">${r.safra_nome}</td>
+                <td class="p-4 text-xs">${r.produto}<br><span class="text-gray-500">${r.comprador}</span></td>
+                <td class="p-4 text-xs font-mono">${fmt(r.quantidade)} ${r.unidade_display}</td>
+                <td class="p-4 text-xs font-mono">${fmtBRL(r.preco_unitario)}</td>
+                <td class="p-4 text-xs font-mono text-secondary font-bold">${fmtBRL(r.valor_total)}</td>
+                <td class="p-4 text-xs flex gap-2">
+                    <button class="text-gray-500 hover:text-secondary" onclick="editarReceita(${r.id})"><span class="material-symbols-outlined text-base">edit</span></button>
+                    <button class="text-gray-500 hover:text-error" onclick="deletarReceita(${r.id})"><span class="material-symbols-outlined text-base">delete</span></button>
+                </td>
+            </tr>`).join('');
+    } catch(e) { console.error(e); }
+}
+
+async function carregarFluxoCaixa() {
+    const tbody = document.getElementById('tbodyFluxoCaixa');
+    try {
+        let url = `/fluxo-caixa/`;
+        const sid = document.getElementById('filtroSafra').value;
+        if(sid) url += `?safra_id=${sid}`;
+        const data = await apiFetch(url);
+        tbody.innerHTML = data.length === 0 ? 
+            `<tr><td colspan="5" class="text-center text-gray-600 py-6">Nenhum evento no fluxo de caixa.</td></tr>` :
+            data.map(ev => `
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="p-4 text-xs">${fmtDate(ev.data)}</td>
+                <td class="p-4 text-xs"><span class="badge ${ev.sinal > 0 ? 'badge-ok' : 'badge-danger'}">${ev.categoria}</span></td>
+                <td class="p-4 text-xs">${ev.descricao}</td>
+                <td class="p-4 text-xs font-mono text-right ${ev.sinal > 0 ? 'text-secondary' : 'text-error'}">${fmtBRL(ev.valor)}</td>
+                <td class="p-4 text-xs font-mono text-right text-white font-bold">${fmtBRL(ev.saldo_acumulado)}</td>
+            </tr>`).join('');
+    } catch(e) { console.error(e); }
+}
+
+// ─── CRUD ─────────────────────────────────────────────────────────────────────
+async function submitDespesa(e) {
+    e.preventDefault();
+    const id = document.getElementById('despEditId').value;
+    const payload = {
+        safra: document.getElementById('despSafra').value,
+        data: document.getElementById('despData').value,
+        categoria: document.getElementById('despCategoria').value,
+        descricao: document.getElementById('despDescricao').value,
+        valor: document.getElementById('despValor').value,
+        observacao: document.getElementById('despObs').value,
+    };
+    try {
+        if(id) await apiFetch(`/despesas/${id}/`, {method:'PATCH', body:JSON.stringify(payload)});
+        else await apiFetch(`/despesas/`, {method:'POST', body:JSON.stringify(payload)});
+        closeModal('despesa');
+        carregarTudo();
+    } catch(err) { alert(err.message); }
+}
+
+function editarDespesa(id) {
+    const d = despesas.find(x => x.id === id);
+    if(!d) return;
+    document.getElementById('despEditId').value = d.id;
+    openModal('despesa');
+    document.getElementById('despSafra').value = d.safra;
+    document.getElementById('despData').value = d.data;
+    document.getElementById('despCategoria').value = d.categoria;
+    document.getElementById('despDescricao').value = d.descricao;
+    document.getElementById('despValor').value = d.valor;
+    document.getElementById('despObs').value = d.observacao || '';
+    document.getElementById('modalDespesaTitle').textContent = 'Editar Despesa';
+}
+
+async function deletarDespesa(id) {
+    if(!confirm("Excluir despesa?")) return;
+    await apiFetch(`/despesas/${id}/`, {method:'DELETE'});
+    carregarTudo();
+}
+
+async function submitReceita(e) {
+    e.preventDefault();
+    const id = document.getElementById('recEditId').value;
+    const payload = {
+        safra: document.getElementById('recSafra').value,
+        data_venda: document.getElementById('recData').value,
+        comprador: document.getElementById('recComprador').value,
+        produto: document.getElementById('recProduto').value,
+        quantidade: document.getElementById('recQtd').value,
+        unidade: document.getElementById('recUnidade').value,
+        preco_unitario: document.getElementById('recPreco').value,
+        observacao: document.getElementById('recObs').value,
+    };
+    try {
+        if(id) await apiFetch(`/receitas/${id}/`, {method:'PATCH', body:JSON.stringify(payload)});
+        else await apiFetch(`/receitas/`, {method:'POST', body:JSON.stringify(payload)});
+        closeModal('receita');
+        carregarTudo();
+    } catch(err) { alert(err.message); }
+}
+
+function editarReceita(id) {
+    const r = receitas.find(x => x.id === id);
+    if(!r) return;
+    document.getElementById('recEditId').value = r.id;
+    openModal('receita');
+    document.getElementById('recSafra').value = r.safra;
+    document.getElementById('recData').value = r.data_venda;
+    document.getElementById('recComprador').value = r.comprador;
+    document.getElementById('recProduto').value = r.produto;
+    document.getElementById('recQtd').value = r.quantidade;
+    document.getElementById('recUnidade').value = r.unidade;
+    document.getElementById('recPreco').value = r.preco_unitario;
+    document.getElementById('recObs').value = r.observacao || '';
+    document.getElementById('modalReceitaTitle').textContent = 'Editar Receita';
+}
+
+async function deletarReceita(id) {
+    if(!confirm("Excluir receita?")) return;
+    await apiFetch(`/receitas/${id}/`, {method:'DELETE'});
+    carregarTudo();
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+    try {
+        const propRes = await apiFetch(`/api/propriedades/${PROP_ID}/`);
+        document.getElementById('breadcrumbFarm').textContent = propRes.nome;
+    } catch (e) { console.error(e); }
+
+    try {
+        safras = await apiFetch(`/api/v1/propriedades/${PROP_ID}/safras/`);
+        const sel = document.getElementById('filtroSafra');
+        sel.innerHTML += safras.map(s => `<option value="${s.id}">${s.nome}</option>`).join('');
+    } catch (e) { console.error(e); }
+
+    carregarTudo();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}
