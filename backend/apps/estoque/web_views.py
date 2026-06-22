@@ -14,3 +14,13 @@ def estoque_dashboard_view(request, propriedade_id):
         "user": request.user,
         "propriedade_id": propriedade_id
     })
+
+
+@login_required
+def estoque_historico_view(request, propriedade_id, insumo_id):
+    """Renderiza a página de histórico/rastreabilidade de um insumo específico."""
+    return render(request, "estoque/estoque_historico.html", {
+        "user": request.user,
+        "propriedade_id": propriedade_id,
+        "insumo_id": insumo_id
+    })

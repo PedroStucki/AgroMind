@@ -206,6 +206,10 @@
                     </select>
                 </div>
                 <div>
+                    <label class="field-label">Fornecedor</label>
+                    <input type="text" id="i_fornecedor" class="custom-input" placeholder="Opcional">
+                </div>
+                <div>
                     <label class="field-label">Preço Unitário (R$) <span class="req">*</span></label>
                     <input type="number" step="0.01" min="0" id="i_preco" required class="custom-input" placeholder="150.00">
                 </div>
@@ -281,6 +285,12 @@
                             <label class="field-label">Aplicar no Talhão <span class="req">*</span></label>
                             <select id="m_s_talhao" class="custom-input appearance-none">
                                 <option value="">Carregando talhões...</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="field-label">Safra <span class="text-gray-500 font-normal">(Opcional)</span></label>
+                            <select id="m_s_safra" class="custom-input appearance-none">
+                                <option value="">Nenhuma safra vinculada (Geral)</option>
                             </select>
                         </div>
                         <div class="md:col-span-2">
@@ -390,7 +400,6 @@
 
         // Fetch talhoes select
         try {
-            // Nota: Se a API de propr retornar talhões detalhados em `/api/propriedades/${id}/`, já daria pra preencher! No nosso sistema anterior, a detail devolvia JSON c/ talhões.
             const resp = await fetch(`/api/propriedades/${PROP_ID}/`, { headers: {"Accept": "application/json"} });
             if(resp.ok) {
                 const prop = await resp.json();
@@ -401,6 +410,19 @@
                 });
             }
         } catch(e) { console.warn(e); }
+
+        // Fetch safras (Assumindo rota no planting)
+        try {
+            const respSafra = await fetch(`/api/v1/propriedades/${PROP_ID}/safras/`, { headers: {"Accept": "application/json"} });
+            if(respSafra.ok) {
+                const safras = await respSafra.json();
+                const selSafra = document.getElementById('m_s_safra');
+                selSafra.innerHTML = '<option value="">Nenhuma safra vinculada (Geral)</option>';
+                safras.forEach(s => {
+                    selSafra.innerHTML += `<option value="${s.id}">${s.nome} (${s.is_active ? 'Ativa' : 'Inativa'})</option>`;
+                });
+            }
+        } catch(e) { console.warn('Rota de safras não injetou', e); }
 
         carregarInsumos();
     }
@@ -450,6 +472,7 @@
                     <td>${statusBadge}</td>
                     <td class="text-right whitespace-nowrap">
                         <button onclick="openModalMov(${i.id}, '${i.nome.replace(/'/g,"\\'")}', ${preco})" class="text-xs text-on-tertiary bg-tertiary/90 hover:bg-tertiary font-bold uppercase tracking-wider py-2 px-4 rounded transition-colors mr-1">Movimentar</button>
+                        <a href="/estoque/${PROP_ID}/insumo/${i.id}/historico/" class="text-xs text-on-primary-container bg-primary-container/80 hover:bg-primary-container font-bold uppercase tracking-wider py-2 px-4 rounded transition-colors mr-1 inline-block">Histórico</a>
                         <button onclick="openEditInsumo(${i.id})" class="text-gray-400 hover:text-white transition-colors mx-1" title="Editar">
                             <span class="material-symbols-outlined text-[1rem]">edit</span>
                         </button>
@@ -484,6 +507,7 @@
             nome: document.getElementById('i_nome').value,
             tipo: document.getElementById('i_tipo').value,
             unidade_medida: document.getElementById('i_unidade').value,
+            fornecedor: document.getElementById('i_fornecedor').value,
             preco_unitario: document.getElementById('i_preco').value,
             estoque_minimo: document.getElementById('i_minimo').value
         };
@@ -520,6 +544,7 @@
             document.getElementById('i_nome').value = i.nome;
             document.getElementById('i_tipo').value = i.tipo;
             document.getElementById('i_unidade').value = i.unidade_medida;
+            document.getElementById('i_fornecedor').value = i.fornecedor || '';
             document.getElementById('i_preco').value = i.preco_unitario;
             document.getElementById('i_minimo').value = i.estoque_minimo;
 
@@ -585,6 +610,7 @@
                 data: new Date(document.getElementById('m_s_data').value).toISOString().split('T')[0],
                 quantidade: document.getElementById('m_s_qtd').value,
                 talhao_id: document.getElementById('m_s_talhao').value,
+                safra_id: document.getElementById('m_s_safra').value || null,
                 observacoes: document.getElementById('m_s_obs').value
             };
         }
